@@ -165,19 +165,29 @@ function subtitlePreview(track: Track): string {
                 </ul>
               </div>
 
-              <div v-if="track.subtitles?.length" class="track-table__subtitles">
+              <div v-if="track.lyrics || track.subtitles?.length" class="track-table__subtitles">
                 <div class="track-table__subtitles-header">
                   <h4 class="track-table__section">
-                    Subtitles ({{ track.subtitles.length }} lines)
+                    Lyrics
+                    <template v-if="track.subtitles?.length">
+                      &middot; {{ track.subtitles.length }} timed lines
+                    </template>
                   </h4>
-                  <button type="button" class="button" @click="downloadTrackSrt(track)">
+                  <button
+                    v-if="track.subtitles?.length"
+                    type="button"
+                    class="button"
+                    @click="downloadTrackSrt(track)"
+                  >
                     Download .srt subtitles
                   </button>
                 </div>
-                <pre class="track-table__subtitles-text">{{ subtitlePreview(track) }}</pre>
+                <pre class="track-table__subtitles-text">{{
+                  track.lyrics ?? subtitlePreview(track)
+                }}</pre>
               </div>
               <p v-else-if="track.hasLyrics" class="faint">
-                Lyrics were detected but subtitles are not stored for this track.
+                Lyrics were detected but lyrics and subtitles are not stored for this track.
               </p>
             </td>
           </tr>

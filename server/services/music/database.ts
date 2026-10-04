@@ -53,6 +53,8 @@ export const TrackSchema = z
     confidence: z.number().min(0).max(1),
     hasLyrics: z.boolean().optional(),
     lyricsLanguage: z.string().max(40).optional(),
+    /** Full transcription. Only stored when STORE_SUBTITLES=true. */
+    lyrics: z.string().min(1).max(100_000).optional(),
     /** Timed lyric lines. Only stored when STORE_SUBTITLES=true. */
     subtitles: z.array(SubtitleSegmentSchema).max(500).optional(),
     song: SongSchema.optional(),
@@ -216,6 +218,8 @@ export interface BuildTrackRecordParams {
   readonly now: Date
   /** When provided, timed lyric lines are persisted for SRT export. */
   readonly subtitles?: readonly LyricSegment[]
+  /** When provided, the full transcription is persisted. */
+  readonly lyrics?: string
 }
 
 export function buildTrackRecord(params: BuildTrackRecordParams): Track {
@@ -259,6 +263,9 @@ export function buildTrackRecord(params: BuildTrackRecordParams): Track {
   record.hasLyrics = hasLyrics
   const language = hasLyrics ? optionalTrimmed(classification.lyricsLanguage, 40) : undefined
   if (language) record.lyricsLanguage = language
+
+  const storedLyrics = params.lyrics?.replace(/\r\n/g, '\n').trim()
+  if (storedLyrics) record.lyrics = storedLyrics.slice(0, 100_000)
 
   if (params.subtitles && params.subtitles.length > 0) {
     record.subtitles = params.subtitles

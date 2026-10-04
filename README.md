@@ -357,11 +357,12 @@ There is no fuzzy matching, so `Rock` and `Rock and Roll` stay distinct.
 
 - `id` is `SHA-256(audio bytes)`, so renaming a file does not create a duplicate.
 - Full lyrics and the audio itself are never stored by default. With
-  `STORE_SUBTITLES=true`, timed lyric segments are persisted in a `subtitles` array so the
-  Database view can expand a track and download its `.srt`; only enable this when you have
-  the rights to redistribute the lyrics.
+  `STORE_SUBTITLES=true`, the transcription is stored in a `lyrics` field, timed lyric
+  segments in a `subtitles` array, and direct commits also add
+  `data/lyrics/<track-id>.txt` and `data/subtitles/<track-id>.srt`; only enable this when
+  you have the rights to redistribute the lyrics.
 - The Database view expands each track to show every stored field: IDs, tags, substyles,
-  diagnostics, song identification and subtitles when present.
+  diagnostics, song identification, the lyrics text and a `.srt` download when present.
 - No user information is stored: submissions are anonymous.
 - Both files are schema-validated (`zod`, strict objects) before and after modification.
   CI runs `npm run validate:data` on every push and Pull Request.
@@ -636,7 +637,7 @@ Server variables (never exposed to the browser):
 | `MIN_STYLE_CONFIDENCE` | `0.7` | Rejection threshold |
 | `MAX_CONTEXT_EXAMPLES` / `..._PER_STYLE` | `24` / `3` | Few-shot context bounds |
 | `MUSIC_DATABASE_PATH` / `STYLE_DATABASE_PATH` | `data/music.json` / `data/styles.json` | Repo paths |
-| `STORE_SUBTITLES` | `false` | Persist timed lyric segments for SRT downloads in the Database view |
+| `STORE_SUBTITLES` | `false` | Persist lyrics + timed segments, and commit `.txt`/`.srt` files |
 | `OPENCODE_MODE` | `cli` | `api` \| `cli` \| `http` \| `mock` |
 | `OPENCODE_BIN` | `opencode` | CLI binary |
 | `OPENCODE_MODEL` | mode default | Model id (`api`: `mimo-v2.6-flash`, otherwise `provider/model`) |

@@ -11,6 +11,7 @@ import type {
   PullRequestInfo,
   RepositoryFile,
   UpdateFileParams,
+  UpdateFilesParams,
 } from './types.js'
 
 export interface DryRunGitHubClientOptions {
@@ -108,6 +109,27 @@ export class DryRunGitHubClient implements GitHubRepositoryClient {
     const commitSha = this.fileSha(params.path, params.content)
     this.branches.set(params.branch, commitSha)
     this.logger.info('[dry-run] committed file', { branch: params.branch, path: params.path })
+    return { commitSha }
+  }
+
+  async updateFiles(params: UpdateFilesParams): Promise<{ commitSha: string }> {
+    await this.ensureLoaded()
+    const files = this.branchFiles.get(params.branch) ?? new Map<string, string>()
+    for (const file of params.files) {
+      files.set(file.path, file.content)
+      if (params.branch === this.baseBranch) {
+        this.baseFiles.set(file.path, file.content)
+      }
+    }
+    this.branchFiles.set(params.branch, files)
+
+    const first = params.files[0]
+    const commitSha = first ? this.fileSha(first.path, first.content) : 'dry-run'
+    this.branches.set(params.branch, commitSha)
+    this.logger.info('[dry-run] committed files', {
+      branch: params.branch,
+      files: params.files.map((file) => file.path),
+    })
     return { commitSha }
   }
 

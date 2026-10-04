@@ -568,6 +568,13 @@ describe('direct write mode', () => {
       { start: 0, end: 3, text: 'First line' },
       { start: 4, end: 7, text: 'Second line' },
     ])
+    expect(database.tracks[0]?.lyrics).toBe('First line\nSecond line')
+
+    const trackId = database.tracks[0]?.id ?? ''
+    expect(github.baseFiles.get(`data/lyrics/${trackId}.txt`)).toContain('First line')
+    expect(github.baseFiles.get(`data/subtitles/${trackId}.srt`)).toContain(
+      '00:00:00,000 --> 00:00:03,000',
+    )
   })
 
   it('replaces an existing entry when X-Replace-Existing is set', async () => {

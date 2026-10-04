@@ -193,6 +193,26 @@ export class FakeGitHubClient implements GitHubRepositoryClient {
     return { commitSha }
   }
 
+  async updateFiles(
+    params: import('../../server/services/github/types.js').UpdateFilesParams,
+  ): Promise<{ commitSha: string }> {
+    this.updateFileCalls += 1
+    if (this.updateFileFailures > 0) {
+      this.updateFileFailures -= 1
+      throw new GitHubError('CONFLICT', 409, 'sha does not match')
+    }
+    const files = this.branchFiles.get(params.branch) ?? new Map<string, string>()
+    for (const file of params.files) {
+      files.set(file.path, file.content)
+      if (params.branch === 'main') this.baseFiles.set(file.path, file.content)
+    }
+    this.branchFiles.set(params.branch, files)
+    const first = params.files[0]
+    const commitSha = first ? contentSha(first.content) : 'fake'
+    this.branches.set(params.branch, commitSha)
+    return { commitSha }
+  }
+
   async createPullRequest(params: CreatePullRequestParams): Promise<PullRequestInfo> {
     const existing = this.pullRequests.find(
       (pullRequest) => pullRequest.branch === params.head && pullRequest.state === 'open',

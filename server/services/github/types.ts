@@ -37,6 +37,14 @@ export interface UpdateFileParams {
   readonly sha: string
 }
 
+export interface UpdateFilesParams {
+  readonly files: readonly { readonly path: string; readonly content: string }[]
+  readonly message: string
+  readonly branch: string
+  /** Blob sha of `files[0]` when it was read, for optimistic concurrency. */
+  readonly baseSha: string
+}
+
 /**
  * The exact surface of repository access the application needs. Deliberately
  * narrow: it is not a generic GitHub API. OpenCode never receives this client;
@@ -47,6 +55,11 @@ export interface GitHubRepositoryClient {
   getBranchHeadSha(branch: string): Promise<string | null>
   createBranch(branch: string, fromSha: string): Promise<void>
   updateFile(params: UpdateFileParams): Promise<{ commitSha: string }>
+  /**
+   * Optional atomic multi-file commit used for track assets (lyrics/SRT).
+   * Clients that cannot commit several files at once omit it.
+   */
+  updateFiles?(params: UpdateFilesParams): Promise<{ commitSha: string }>
   createPullRequest(params: CreatePullRequestParams): Promise<PullRequestInfo>
   findOpenPullRequest(headPrefix: string): Promise<PullRequestInfo | null>
   getPullRequest(number: number): Promise<PullRequestDetails>

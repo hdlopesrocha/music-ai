@@ -197,6 +197,7 @@ describe('buildTrackRecord', () => {
       style: 'Pop',
       song: null,
       now: new Date('2026-10-04T12:00:00.000Z'),
+      lyrics: 'First line\nSecond line',
       subtitles: [
         { start: 4, end: 3, text: ' Second line ' },
         { start: 0, end: 3, text: 'First line' },
@@ -207,10 +208,10 @@ describe('buildTrackRecord', () => {
       { start: 4, end: 6, text: 'Second line' },
       { start: 0, end: 3, text: 'First line' },
     ])
-    expect(
-      parseMusicDatabase(serializeMusicDatabase({ version: 1, tracks: [track] })).tracks[0]
-        ?.subtitles,
-    ).toHaveLength(2)
+    expect(track.lyrics).toBe('First line\nSecond line')
+    const parsed = parseMusicDatabase(serializeMusicDatabase({ version: 1, tracks: [track] }))
+    expect(parsed.tracks[0]?.subtitles).toHaveLength(2)
+    expect(parsed.tracks[0]?.lyrics).toBe('First line\nSecond line')
   })
 
   it('falls back to the AI song proposal for title and artist', () => {

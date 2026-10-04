@@ -27,6 +27,7 @@ import {
   type Track,
 } from '../music/database.js'
 import { createStyleCatalog, type StyleCatalog } from '../music/styles.js'
+import { buildTrackAssetFiles } from '../music/srt.js'
 import type { SongIdentificationService, VerifiedSongMatch } from '../song/types.js'
 
 const MAX_WRITE_ATTEMPTS = 3
@@ -293,6 +294,7 @@ export class MusicSubmissionWorkflow {
       ...(this.config.storeSubtitles && result.lyricsSegments
         ? { subtitles: result.lyricsSegments }
         : {}),
+      ...(this.config.storeSubtitles && result.lyrics ? { lyrics: result.lyrics } : {}),
     })
 
     return { status: 'classified', track, classification: result, song }
@@ -484,13 +486,23 @@ export class MusicSubmissionWorkflow {
         // Never commit anything that would not parse back through the schema.
         parseMusicDatabase(content)
 
-        const { commitSha } = await github.updateFile({
-          path: musicPath,
-          content,
-          message: buildCommitMessage(track, replaced),
-          branch: baseBranch,
-          sha: baseFile.sha,
-        })
+        const assetFiles = buildTrackAssetFiles(track)
+        const message = buildCommitMessage(track, replaced)
+        const { commitSha } =
+          assetFiles.length > 0 && github.updateFiles
+            ? await github.updateFiles({
+                files: [{ path: musicPath, content }, ...assetFiles],
+                message,
+                branch: baseBranch,
+                baseSha: baseFile.sha,
+              })
+            : await github.updateFile({
+                path: musicPath,
+                content,
+                message,
+                branch: baseBranch,
+                sha: baseFile.sha,
+              })
 
         const publication: Publication = {
           type: 'commit',

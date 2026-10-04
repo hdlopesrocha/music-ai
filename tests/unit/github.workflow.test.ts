@@ -257,6 +257,32 @@ describe('submit', () => {
     expect(database.tracks[0]?.id).toBe(input.sha256)
   })
 
+  it('writes lyrics and SRT asset files alongside the database', async () => {
+    const input = makeAudioInput()
+    const { workflow, github } = createWorkflow({
+      agentResult: {
+        lyrics: 'Line one\nLine two',
+        lyricsSegments: [
+          { start: 0, end: 3, text: 'Line one' },
+          { start: 4, end: 7, text: 'Line two' },
+        ],
+        instrumental: false,
+      },
+      env: { GITHUB_WRITE_MODE: 'direct', STORE_SUBTITLES: 'true' },
+    })
+
+    const outcome = await workflow.submit({ input, requestId: 'assets-1' })
+    expect(outcome.status).toBe('classified')
+
+    const srt = github.baseFiles.get(`data/subtitles/${input.sha256}.srt`)
+    const lyrics = github.baseFiles.get(`data/lyrics/${input.sha256}.txt`)
+    expect(srt).toContain('00:00:00,000 --> 00:00:03,000')
+    expect(srt).toContain('Line one')
+    expect(lyrics).toContain('Line one')
+    expect(github.updateFileCalls).toBe(1)
+    expect(github.pullRequests).toHaveLength(0)
+  })
+
   it('replaces an existing entry when replace is requested', async () => {
     const input = makeAudioInput()
     const existingTrack = {

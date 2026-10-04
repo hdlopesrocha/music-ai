@@ -13,6 +13,7 @@ import type {
   PullRequestInfo,
   RepositoryFile,
   UpdateFileParams,
+  UpdateFilesParams,
 } from './types.js'
 
 const execFileAsync = promisify(execFile)
@@ -115,50 +116,82 @@ export class LocalGitHubClient implements GitHubRepositoryClient {
     }
   }
 
+  private async blobSha(path: string): Promise<string> {
+    try {
+      return (await this.git(['hash-object', path])).trim()
+    } catch {
+      return ''
+    }
+  }
+
+  private async commitAndPush(
+    paths: readonly string[],
+    params: UpdateFilesParams | UpdateFileParams,
+  ): Promise<{ commitSha: string }> {
+    for (const path of paths) {
+      await this.git(['add', path])
+    }
+    await this.git([
+      '-c',
+      `user.name=${this.options.commitName}`,
+      '-c',
+      `user.email=${this.options.commitEmail}`,
+      'commit',
+      '-m',
+      params.message,
+    ])
+    const commitSha = (await this.git(['rev-parse', 'HEAD'])).trim()
+
+    try {
+      await this.git(['push', 'origin', `HEAD:${this.options.branch}`])
+    } catch (error) {
+      throw new GitHubError(
+        'CONFLICT',
+        409,
+        `Push rejected (remote moved): ${(error as Error).message}`,
+      )
+    }
+
+    this.options.logger.info('local-git commit pushed', {
+      branch: this.options.branch,
+      commitSha: commitSha.slice(0, 12),
+      files: paths.length,
+    })
+    return { commitSha }
+  }
+
   async updateFile(params: UpdateFileParams): Promise<{ commitSha: string }> {
+    return this.updateFiles({
+      files: [{ path: params.path, content: params.content }],
+      message: params.message,
+      branch: params.branch,
+      baseSha: params.sha,
+    })
+  }
+
+  async updateFiles(params: UpdateFilesParams): Promise<{ commitSha: string }> {
     return this.serialize(async () => {
       await this.sync()
 
-      let currentSha = ''
-      try {
-        currentSha = (await this.git(['hash-object', params.path])).trim()
-      } catch {
-        currentSha = ''
-      }
-      if (currentSha !== params.sha) {
+      const guarded = params.files[0]
+      if (!guarded)
+        throw new GitHubError('API_ERROR', 400, 'updateFiles requires at least one file')
+
+      const currentSha = await this.blobSha(guarded.path)
+      if (currentSha !== params.baseSha) {
         throw new GitHubError('CONFLICT', 409, 'The file changed since it was read')
       }
 
-      const absolute = join(this.repoDir, params.path)
-      await mkdir(dirname(absolute), { recursive: true })
-      await writeFile(absolute, params.content, 'utf8')
-      await this.git(['add', params.path])
-      await this.git([
-        '-c',
-        `user.name=${this.options.commitName}`,
-        '-c',
-        `user.email=${this.options.commitEmail}`,
-        'commit',
-        '-m',
-        params.message,
-      ])
-      const commitSha = (await this.git(['rev-parse', 'HEAD'])).trim()
-
-      try {
-        await this.git(['push', 'origin', `HEAD:${this.options.branch}`])
-      } catch (error) {
-        throw new GitHubError(
-          'CONFLICT',
-          409,
-          `Push rejected (remote moved): ${(error as Error).message}`,
-        )
+      for (const file of params.files) {
+        const absolute = join(this.repoDir, file.path)
+        await mkdir(dirname(absolute), { recursive: true })
+        await writeFile(absolute, file.content, 'utf8')
       }
 
-      this.options.logger.info('local-git commit pushed', {
-        branch: this.options.branch,
-        commitSha: commitSha.slice(0, 12),
-      })
-      return { commitSha }
+      return this.commitAndPush(
+        params.files.map((file) => file.path),
+        params,
+      )
     })
   }
 

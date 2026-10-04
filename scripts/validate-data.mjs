@@ -80,6 +80,7 @@ if (musicDoc !== null) {
         'confidence',
         'hasLyrics',
         'lyricsLanguage',
+        'lyrics',
         'subtitles',
         'song',
         'detectedAt',

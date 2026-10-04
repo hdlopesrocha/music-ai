@@ -83,6 +83,29 @@ describe('LocalGitHubClient', () => {
     expect(log).toContain('data: add track')
   })
 
+  it('commits several files atomically', async () => {
+    const { client, remote } = await setup()
+    const file = await client.getFile('data/music.json')
+    const updated = '{"version":1,"tracks":[{"id":"y"}]}\n'
+
+    const { commitSha } = await client.updateFiles({
+      files: [
+        { path: 'data/music.json', content: updated },
+        { path: 'data/lyrics/y.txt', content: 'line one\n' },
+        { path: 'data/subtitles/y.srt', content: '1\n00:00:00,000 --> 00:00:02,000\nline one\n' },
+      ],
+      message: 'data: add y with assets',
+      branch: 'main',
+      baseSha: file.sha,
+    })
+
+    expect(commitSha).toMatch(/^[a-f0-9]{40}$/)
+    expect(await git(remote, 'show', 'main:data/lyrics/y.txt')).toBe('line one\n')
+    expect(await git(remote, 'show', 'main:data/subtitles/y.srt')).toContain('line one')
+    const log = await git(remote, 'log', '--oneline', 'main')
+    expect(log.trim().split('\n')).toHaveLength(2)
+  })
+
   it('rejects a stale blob sha with a CONFLICT', async () => {
     const { client, seed } = await setup()
     const stale = await client.getFile('data/music.json')

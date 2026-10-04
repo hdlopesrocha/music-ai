@@ -72,13 +72,10 @@
     {
       "id": "496710d70380c36c1f08ba6258b660b748acda68178f2d934f4844b6d48b24bf",
       "fileName": "Moblack, Salif Keita & Cesária Evora - Yamore (Lyrics) [qZNYIaMGpF0].mp3",
-      "style": "House",
-      "confidence": 0.88,
-      "detectedAt": "2026-10-04T17:23:52.832Z",
-      "source": "opencode",
       "title": "Yamore",
       "artist": "MobiBlack, Salif Keita & Cesária Evora",
       "duration": 248,
+      "style": "House",
       "substyles": [
         "Deep House",
         "Afro House",
@@ -96,8 +93,11 @@
         "soulful",
         "danceable"
       ],
+      "confidence": 0.88,
       "hasLyrics": true,
       "lyricsLanguage": "French, Portuguese, Cape Verdean Creole",
+      "detectedAt": "2026-10-04T17:23:52.832Z",
+      "source": "opencode",
       "diagnostics": {
         "bpm": 122,
         "duration": 248,
@@ -113,6 +113,74 @@
           "clean electric guitar",
           "male lead vocals",
           "female backing vocals"
+        ]
+      }
+    },
+    {
+      "id": "ea35c904afb216f3afd765c01978758b2294188c2cd43b6c415b71e4ac8887f9",
+      "fileName": "if-i-loved-you-1945.mp3",
+      "style": "Jazz",
+      "confidence": 0.78,
+      "detectedAt": "2026-10-04T17:59:02.663Z",
+      "source": "opencode",
+      "title": "If I Loved You",
+      "artist": "Larry Clinton's Orchestra;The Toon Timers;Hammerstein II and Richard Rodgers",
+      "album": "If I Loved You",
+      "duration": 197,
+      "substyles": [
+        "Big Band",
+        "Traditional Pop",
+        "Dance Band",
+        "Swing"
+      ],
+      "tags": [
+        "big band orchestra",
+        "brass section",
+        "saxophones",
+        "strings",
+        "brush drums",
+        "vintage recording",
+        "surface noise",
+        "crooner vocals",
+        "ballad tempo",
+        "show tune"
+      ],
+      "hasLyrics": true,
+      "lyricsLanguage": "English",
+      "subtitles": [
+        {
+          "start": 127,
+          "end": 134,
+          "text": "Oh, if I loved you,"
+        },
+        {
+          "start": 134,
+          "end": 142,
+          "text": "time and again I would try to say"
+        },
+        {
+          "start": 142,
+          "end": 151,
+          "text": "all I'd want you to know."
+        },
+        {
+          "start": 151,
+          "end": 157,
+          "text": "If I loved you..."
+        }
+      ],
+      "diagnostics": {
+        "bpm": 84,
+        "duration": 197,
+        "key": "Ab major",
+        "energy": 0.35,
+        "instrumentation": [
+          "brass",
+          "saxophones",
+          "strings",
+          "acoustic bass",
+          "drum kit with brushes",
+          "male vocals"
         ]
       }
     }

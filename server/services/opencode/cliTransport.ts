@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process'
-import { dirname } from 'node:path'
+import { copyFile, mkdir } from 'node:fs/promises'
+import { dirname, join, resolve } from 'node:path'
 import type { OpenCodeConfig } from '../../config.js'
 import { OpenCodeError } from '../../errors.js'
 import { truncate } from '../../utils/text.js'
@@ -114,15 +115,43 @@ export const defaultCliProcessRunner: CliProcessRunner = (params) =>
     })
   })
 
+export interface CliTransportOptions {
+  /**
+   * Path to the agent markdown definition. It is copied into the per-request
+   * workspace so OpenCode discovers it as part of that isolated project.
+   */
+  readonly agentSourcePath?: string
+}
+
 export class CliOpenCodeTransport implements OpenCodeTransport {
   readonly name = 'cli'
   private readonly runner: CliProcessRunner
+  private readonly agentSourcePath: string
 
   constructor(
     private readonly config: OpenCodeConfig,
     runner: CliProcessRunner = defaultCliProcessRunner,
+    options: CliTransportOptions = {},
   ) {
     this.runner = runner
+    this.agentSourcePath =
+      options.agentSourcePath ?? resolve(process.cwd(), '.opencode', 'agents', `${config.agent}.md`)
+  }
+
+  /**
+   * The analysis runs in an isolated temp directory, so the project-scoped
+   * agent definition has to be materialized there for `--agent` to resolve.
+   * Best effort: if the source file is missing, OpenCode reports the real
+   * configuration error itself.
+   */
+  private async materializeAgent(workspaceDir: string): Promise<void> {
+    try {
+      const targetDir = join(workspaceDir, '.opencode', 'agents')
+      await mkdir(targetDir, { recursive: true })
+      await copyFile(this.agentSourcePath, join(targetDir, `${this.config.agent}.md`))
+    } catch {
+      // fall through; the OpenCode invocation will surface a missing agent
+    }
   }
 
   async run(params: {
@@ -130,6 +159,7 @@ export class CliOpenCodeTransport implements OpenCodeTransport {
     systemPrompt: string
     prompt: string
   }): Promise<string> {
+    await this.materializeAgent(dirname(params.input.filePath))
     const invocation = buildCliInvocation(this.config, params.input, params.prompt)
 
     let result: CliProcessResult

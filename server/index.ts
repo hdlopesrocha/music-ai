@@ -2,6 +2,7 @@ import { createServer } from 'node:http'
 import { describeConfig } from './config.js'
 import { createRuntime } from './container.js'
 import { handleNodeRequest } from './nodeAdapter.js'
+import { createStaticHandler, sendStaticResponse } from './static.js'
 
 try {
   process.loadEnvFile()
@@ -12,7 +13,22 @@ try {
 const runtime = createRuntime()
 runtime.logger.info('starting submission API', describeConfig(runtime.config))
 
+const staticHandler = runtime.config.serveStatic
+  ? createStaticHandler(runtime.config.staticDir)
+  : null
+
 const server = createServer((req, res) => {
+  if (staticHandler) {
+    const pathname = new URL(req.url ?? '/', 'http://internal.local').pathname
+    void staticHandler.handle(pathname).then((staticResponse) => {
+      if (staticResponse) {
+        sendStaticResponse(res, staticResponse)
+        return
+      }
+      return handleNodeRequest(runtime.app, req, res, runtime.config.maxUploadSize)
+    })
+    return
+  }
   void handleNodeRequest(runtime.app, req, res, runtime.config.maxUploadSize)
 })
 

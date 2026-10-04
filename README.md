@@ -146,6 +146,21 @@ Layer responsibilities:
 
 The uploaded audio is deleted immediately after processing and never leaves the server.
 
+### One-container deployment
+
+`Dockerfile` builds a single image containing the Submission API, OpenCode, the JSON
+databases and the compiled Vue UI. It serves everything on port `8787`
+(`SERVE_STATIC=true`), so it can be deployed as one service on Render, a VPS, a NAS or
+locally:
+
+```bash
+docker build -t music-ai .
+docker run --rm -p 8787:8787 --env-file .env music-ai
+```
+
+`.github/workflows/docker.yml` publishes the image to `ghcr.io/<owner>/music-ai-api` and
+`render.yaml` is a ready-to-use Render Blueprint.
+
 ---
 
 ## Repository structure
@@ -556,6 +571,7 @@ Server variables (never exposed to the browser):
 | Variable | Default | Description |
 | --- | --- | --- |
 | `PORT` / `HOST` | `8787` / `0.0.0.0` | API bind address |
+| `SERVE_STATIC` / `STATIC_DIR` | `false` / `dist` | Serve the built UI from the same origin |
 | `LOG_LEVEL` | `info` | `debug` \| `info` \| `warn` \| `error` |
 | `ALLOWED_ORIGINS` | `` | Comma-separated CORS origins |
 | `RATE_LIMIT_SALT` | dev salt | Salt for hashed rate-limit keys |
@@ -614,17 +630,47 @@ the database and styles keeps working.
 After a maintainer merges a classification PR, the workflow reruns and the new track appears
 in the public database automatically.
 
-### Deploying the API
+### Deploying the API (Docker, published from GitHub)
 
-Choose one:
+GitHub itself cannot run the server: GitHub Pages serves static files only, and Actions
+runners cannot receive inbound HTTP traffic. GitHub **can** build and publish a container
+image, and any small host can run it. The image is self-contained - it serves the Submission
+API, the built Vue UI and `data/*.json` on a single origin.
 
-- **Persistent Node host** (Render, Fly.io, Railway, a VPS): `npm ci && npm start` with
-  `OPENCODE_MODE=cli` and OpenCode installed. Best isolation and no size limit issues.
-- **Serverless** (Vercel, Netlify functions): the `api/*` entries work out of the box, but
-  OpenCode cannot run inside the function - deploy the gateway on a Node host and set
-  `OPENCODE_MODE=http` plus `OPENCODE_ENDPOINT` / `OPENCODE_GATEWAY_TOKEN`.
+1. **Publish the image.** `.github/workflows/docker.yml` builds and pushes
+   `ghcr.io/<owner>/music-ai-api:latest` on every push to `main`.
+2. **Make the package public.** Repository -> Packages -> `music-ai-api` -> Package settings
+   -> Change visibility -> Public (or configure registry credentials on your host).
+3. **Run it** on any host:
+   - **Render Blueprint:** New -> Blueprint -> select this repository. `render.yaml` is
+     detected; fill the secret variables (`GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`,
+     `ANTHROPIC_API_KEY`). The free plan sleeps after inactivity; `starter` stays warm.
+   - **Any Docker host / VPS / NAS:**
+     ```bash
+     docker run -d --name music-ai -p 8787:8787 \
+       -e GITHUB_MODE=app \
+       -e GITHUB_OWNER=hdlopesrocha -e GITHUB_REPOSITORY=music-ai -e GITHUB_BASE_BRANCH=main \
+       -e GITHUB_APP_ID=123456 -e GITHUB_APP_PRIVATE_KEY="$PRIVATE_KEY" \
+       -e ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
+       -e OPENCODE_MODE=cli -e SERVE_STATIC=true \
+       -e ALLOWED_ORIGINS=https://hdlopesrocha.github.io \
+       -e RATE_LIMIT_SALT="$(openssl rand -hex 16)" \
+       -e FEEDBACK_TOKEN_SECRET="$(openssl rand -hex 32)" \
+       ghcr.io/hdlopesrocha/music-ai-api:latest
+     ```
+   - **Locally:** `docker compose up --build` with a filled `.env`.
 
-Remember to add the GitHub Pages origin to `ALLOWED_ORIGINS`.
+   The container's provider credentials are forwarded to OpenCode through
+   `OPENCODE_ENV_PASSTHROUGH` (which already includes `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`,
+   `OPENROUTER_API_KEY` and `GEMINI_API_KEY`).
+4. **Point the static site at it.** Set `apiBaseUrl` in `config.json` (gh-pages branch) or the
+   repository variable `VITE_API_BASE_URL`, and include the Pages origin in `ALLOWED_ORIGINS`.
+   If you instead browse the container's own UI (`http://host:8787`), no configuration is
+   needed because the API is same-origin.
+
+The serverless `api/*` entries remain available for Vercel/Netlify deployments, but OpenCode
+cannot run inside a function there: set `OPENCODE_MODE=http` and point `OPENCODE_ENDPOINT` at
+the gateway (`npm run start:gateway`) running on a Node host.
 
 ---
 

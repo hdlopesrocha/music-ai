@@ -39,6 +39,8 @@ const RawConfigSchema = z.object({
   maxContextExamplesPerStyle: z.coerce.number().int().positive().default(3),
   musicDatabasePath: z.string().min(1).default('data/music.json'),
   styleDatabasePath: z.string().min(1).default('data/styles.json'),
+  serveStatic: BooleanFromEnv.default(false),
+  staticDir: z.string().min(1).default('dist'),
   opencodeMode: z.enum(['cli', 'http', 'mock']).default('cli'),
   opencodeBin: z.string().min(1).default('opencode'),
   opencodeModel: z.string().min(1).default('anthropic/claude-sonnet-4-5'),
@@ -112,6 +114,8 @@ export interface AppConfig {
   readonly maxContextExamplesPerStyle: number
   readonly musicDatabasePath: string
   readonly styleDatabasePath: string
+  readonly serveStatic: boolean
+  readonly staticDir: string
   readonly opencode: OpenCodeConfig
   readonly songLookup: SongLookupConfig
   readonly github: GitHubConfig
@@ -165,6 +169,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     maxContextExamplesPerStyle: env.MAX_CONTEXT_EXAMPLES_PER_STYLE,
     musicDatabasePath: env.MUSIC_DATABASE_PATH,
     styleDatabasePath: env.STYLE_DATABASE_PATH,
+    serveStatic: env.SERVE_STATIC,
+    staticDir: env.STATIC_DIR,
     opencodeMode: env.OPENCODE_MODE,
     opencodeBin: env.OPENCODE_BIN,
     opencodeModel: env.OPENCODE_MODEL,
@@ -216,6 +222,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     maxContextExamplesPerStyle: raw.maxContextExamplesPerStyle,
     musicDatabasePath: raw.musicDatabasePath,
     styleDatabasePath: raw.styleDatabasePath,
+    serveStatic: raw.serveStatic,
+    staticDir: raw.staticDir,
     opencode: {
       mode: raw.opencodeMode,
       bin: raw.opencodeBin,
@@ -262,6 +270,7 @@ export function isGitHubWriterConfigured(config: AppConfig): boolean {
 export function describeConfig(config: AppConfig): Record<string, unknown> {
   return {
     nodeEnv: config.nodeEnv,
+    serveStatic: config.serveStatic,
     opencodeMode: config.opencode.mode,
     opencodeModel: config.opencode.model,
     minStyleConfidence: config.minStyleConfidence,

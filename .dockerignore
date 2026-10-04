@@ -1,0 +1,12 @@
+.git
+.github
+node_modules
+dist
+coverage
+public/data
+tests
+.env
+.env.*
+*.log
+.opencode/data
+README.md

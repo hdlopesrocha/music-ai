@@ -1,4 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterEach, describe, expect, it } from 'vitest'
 import { OpenCodeError } from '../../server/errors.js'
 import {
   CliOpenCodeTransport,
@@ -9,6 +12,12 @@ import {
 import { makeAudioInput, testConfig } from '../helpers/fakes.js'
 
 const config = testConfig().opencode
+
+const cleanups: Array<() => Promise<void>> = []
+
+afterEach(async () => {
+  await Promise.all(cleanups.splice(0).map((cleanup) => cleanup()))
+})
 
 const streamWith = (text: string): string =>
   [
@@ -101,5 +110,34 @@ describe('CliOpenCodeTransport', () => {
     await expect(
       transport.run({ input: makeAudioInput(), systemPrompt: 's', prompt: 'p' }),
     ).rejects.toBeInstanceOf(OpenCodeError)
+  })
+
+  it('materialises the project agent definition into the isolated workspace', async () => {
+    const sourceDir = await mkdtemp(join(tmpdir(), 'music-ai-agent-src-'))
+    const workspace = await mkdtemp(join(tmpdir(), 'music-ai-agent-ws-'))
+    cleanups.push(() => rm(sourceDir, { recursive: true, force: true }))
+    cleanups.push(() => rm(workspace, { recursive: true, force: true }))
+
+    const source = join(sourceDir, 'music-classifier.md')
+    await writeFile(source, '---\ndescription: test agent\n---\nclassify the audio')
+    const audioPath = join(workspace, 'audio.mp3')
+    await writeFile(audioPath, 'audio-bytes')
+
+    const transport = new CliOpenCodeTransport(
+      config,
+      runnerReturning({ stdout: streamWith('{"style":"Rock","confidence":0.9}') }),
+      { agentSourcePath: source },
+    )
+    await transport.run({
+      input: makeAudioInput({ filePath: audioPath }),
+      systemPrompt: 's',
+      prompt: 'p',
+    })
+
+    const copied = await readFile(
+      join(workspace, '.opencode', 'agents', 'music-classifier.md'),
+      'utf8',
+    )
+    expect(copied).toContain('classify the audio')
   })
 })

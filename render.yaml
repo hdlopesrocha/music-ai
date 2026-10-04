@@ -1,0 +1,44 @@
+# Render Blueprint: deploys the prebuilt image published by GitHub Actions to
+# ghcr.io. The image serves the Submission API, the database and the Vue UI in
+# one container.
+#
+# Usage: Render Dashboard -> New -> Blueprint -> select this repository.
+# The image package must be public, or provide registry credentials.
+services:
+  - type: web
+    name: music-ai-api
+    runtime: image
+    image:
+      url: ghcr.io/hdlopesrocha/music-ai-api:latest
+    plan: starter
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: SERVE_STATIC
+        value: 'true'
+      - key: OPENCODE_MODE
+        value: cli
+      - key: GITHUB_MODE
+        value: app
+      - key: GITHUB_OWNER
+        value: hdlopesrocha
+      - key: GITHUB_REPOSITORY
+        value: music-ai
+      - key: GITHUB_BASE_BRANCH
+        value: main
+      - key: GITHUB_APP_ID
+        sync: false
+      - key: GITHUB_APP_PRIVATE_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: SONG_LOOKUP_ENABLED
+        value: 'true'
+      - key: MUSICBRAINZ_USER_AGENT
+        value: 'AI-Music-Style-Database/1.0 (+https://github.com/hdlopesrocha/music-ai)'
+      - key: ALLOWED_ORIGINS
+        value: https://hdlopesrocha.github.io
+      - key: RATE_LIMIT_SALT
+        generateValue: true
+      - key: FEEDBACK_TOKEN_SECRET
+        generateValue: true

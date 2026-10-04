@@ -1,0 +1,6 @@
+dist
+coverage
+public/data
+node_modules
+package-lock.json
+*.md

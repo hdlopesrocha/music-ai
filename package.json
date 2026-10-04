@@ -1,0 +1,58 @@
+{
+  "name": "ai-music-style-database",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Public AI music style database. Anonymous users submit music, OpenCode classifies it, a GitHub App opens a public Pull Request.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c blue,green \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:web": "vite",
+    "dev:api": "tsx watch server/index.ts",
+    "predev": "node scripts/sync-data.mjs",
+    "prebuild": "node scripts/sync-data.mjs",
+    "build": "vue-tsc --noEmit -p tsconfig.app.json && vite build",
+    "preview": "vite preview",
+    "start": "tsx server/index.ts",
+    "start:gateway": "tsx server/opencode-gateway.ts",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.server.json && tsc --noEmit -p tsconfig.node.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "validate:data": "node scripts/validate-data.mjs",
+    "sync:data": "node scripts/sync-data.mjs"
+  },
+  "dependencies": {
+    "music-metadata": "^11.0.0",
+    "vue": "^3.5.0",
+    "vue-router": "^4.4.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@types/node": "^24.0.0",
+    "@vitejs/plugin-vue": "^5.2.0",
+    "@vitest/coverage-v8": "^3.2.7",
+    "@vue/test-utils": "^2.4.6",
+    "concurrently": "^9.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-prettier": "^10.0.0",
+    "eslint-plugin-vue": "^9.30.0",
+    "globals": "^15.0.0",
+    "jsdom": "^25.0.0",
+    "prettier": "^3.3.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.0.0",
+    "vite": "^6.0.0",
+    "vitest": "^3.0.0",
+    "vue-tsc": "^2.1.0"
+  }
+}

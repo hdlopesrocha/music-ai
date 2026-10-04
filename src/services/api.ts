@@ -160,6 +160,45 @@ export function analyzeMusic(file: File, options: SubmitOptions = {}): Promise<S
   return postAudio('/api/analyze', file, options)
 }
 
+export interface SimilarArtistsResponse {
+  success: boolean
+  artist: string
+  neighbors: string[]
+  source: 'music-map' | 'disabled'
+}
+
+/**
+ * Fetches similar artists from the server, which proxies music-map.com with
+ * caching and rate limiting.
+ */
+export async function fetchSimilarArtists(artist: string): Promise<SimilarArtistsResponse> {
+  const url = new URL(await resolveUrl('/api/similar-artists'), window.location.origin)
+  url.searchParams.set('artist', artist)
+  const response = await fetch(url.toString(), {
+    headers: { accept: 'application/json' },
+    cache: 'no-store',
+  })
+  const text = await response.text()
+  let payload: unknown = null
+  if (text.length > 0) {
+    try {
+      payload = JSON.parse(text)
+    } catch {
+      payload = null
+    }
+  }
+  if (!response.ok) {
+    const message =
+      isRecord(payload) && typeof payload.message === 'string'
+        ? payload.message
+        : `The discovery request failed with status ${response.status}`
+    const reason =
+      isRecord(payload) && typeof payload.reason === 'string' ? payload.reason : undefined
+    throw new ApiRequestError(message, response.status, reason)
+  }
+  return payload as unknown as SimilarArtistsResponse
+}
+
 /**
  * Lists the media-capable models the server allows and the context-size bounds.
  * Returns null when the API is unreachable or not configured; the Analyze page

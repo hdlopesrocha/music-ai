@@ -15,6 +15,10 @@ import type {
   ModelCatalogInfo,
 } from '../../server/services/opencode/modelCatalog.js'
 import type {
+  SimilarArtistService,
+  SimilarArtistsResult,
+} from '../../server/services/discovery/musicMap.js'
+import type {
   CreatePullRequestParams,
   GitHubRepositoryClient,
   IssueComment,
@@ -250,6 +254,21 @@ export class FakeGitHubClient implements GitHubRepositoryClient {
       }
     }
     throw new GitHubError('NOT_FOUND', 404, 'Comment not found')
+  }
+}
+
+export class FakeSimilarArtistService implements SimilarArtistService {
+  calls = 0
+
+  constructor(
+    private readonly neighbors: string[] = ['Justice', 'Gorillaz'],
+    private readonly fail = false,
+  ) {}
+
+  async findNeighbors(artist: string): Promise<SimilarArtistsResult> {
+    this.calls += 1
+    if (this.fail) throw new Error('music-map upstream down')
+    return { artist, neighbors: this.neighbors, source: 'music-map' }
   }
 }
 

@@ -451,6 +451,24 @@ with reasons such as `BAD_REQUEST`, `UNSUPPORTED_MEDIA_TYPE`, `PAYLOAD_TOO_LARGE
 `RATE_LIMITED`, `OPENCODE_FAILED`, `OPENCODE_TIMEOUT`, `GITHUB_FAILED`, `DATABASE_INVALID`,
 `SERVER_MISCONFIGURED`, `BUSY`, `CONFLICT` or `INTERNAL`.
 
+### `GET /api/similar-artists?artist=Daft%20Punk`
+
+Read-only artist discovery used by the **Find neighbors** button in the Database view. The
+server fetches music-map.com politely (descriptive user-agent, 8 s timeout, one upstream
+request per second, six-hour in-memory cache) and returns the parsed neighbour names:
+
+```json
+{
+  "success": true,
+  "artist": "Daft Punk",
+  "neighbors": ["Justice", "Gorillaz", "Deadmau5"],
+  "source": "music-map"
+}
+```
+
+Discovery is metadata only: it does not download audio. Adding a track still goes through the
+file picker or the API, so only audio you have the rights to is ever analysed.
+
 ### `POST /api/feedback`
 
 ```json
@@ -615,6 +633,9 @@ Server variables (never exposed to the browser):
 | `GATEWAY_PORT` | `8788` | Port for `npm run start:gateway` |
 | `OPENCODE_TIMEOUT_MS` | `120000` | Hard timeout |
 | `OPENCODE_ENV_PASSTHROUGH` | sane defaults | Allowlist forwarded to the child |
+| `MUSIC_MAP_ENABLED` | `true` | Enable the music-map.com neighbor lookup |
+| `MUSIC_MAP_BASE_URL` / `..._TIMEOUT_MS` | music-map.com / `8 s` | Discovery upstream |
+| `MUSIC_MAP_CACHE_TTL_MS` / `..._MAX_NEIGHBORS` | `6 h` / `24` | Discovery cache and result cap |
 | `SONG_LOOKUP_ENABLED` | `true` | Enable MusicBrainz verification |
 | `SONG_LOOKUP_PROVIDER` | `musicbrainz` | `musicbrainz` \| `none` |
 | `SONG_MATCH_MIN_SCORE` | `75` | MusicBrainz score threshold |

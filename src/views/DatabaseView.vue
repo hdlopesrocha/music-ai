@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMusicDatabase } from '@/composables/useMusicDatabase'
+import { ApiRequestError, fetchSimilarArtists } from '@/services/api'
 import PaginationControls from '@/components/PaginationControls.vue'
 import TrackTable from '@/components/TrackTable.vue'
 
@@ -78,16 +79,63 @@ function clearFilters(): void {
 }
 
 const hasFilters = computed(() => search.value.trim().length > 0 || styleFilter.value.length > 0)
+
+const neighborsLoading = ref(false)
+
+/**
+ * Fetches similar artists for the current search term (or a prompted one) and
+ * shows them in a simple alert, as requested.
+ */
+async function showNeighbors(): Promise<void> {
+  const artist = (
+    search.value.trim() ||
+    window.prompt('Artist name for music-map.com', '') ||
+    ''
+  ).trim()
+  if (artist.length === 0) return
+
+  neighborsLoading.value = true
+  try {
+    const result = await fetchSimilarArtists(artist)
+    if (result.source === 'disabled') {
+      window.alert('Similar-artist discovery is disabled on this server.')
+      return
+    }
+    if (result.neighbors.length === 0) {
+      window.alert(`No neighbors found for "${result.artist}".`)
+      return
+    }
+    const list = result.neighbors.map((name, index) => `${index + 1}. ${name}`).join('\n')
+    window.alert(`Artists similar to ${result.artist} (music-map.com):\n\n${list}`)
+  } catch (error) {
+    window.alert(
+      error instanceof ApiRequestError ? error.message : 'Could not fetch similar artists.',
+    )
+  } finally {
+    neighborsLoading.value = false
+  }
+}
 </script>
 
 <template>
   <div class="page">
-    <header class="section">
-      <h1 class="page-title">Public database</h1>
-      <p class="page-subtitle">
-        {{ stats.totalTracks }} classified track(s) across {{ stats.knownStyles }} known styles.
-        Data lives in <code>data/music.json</code> and updates when Pull Requests are merged.
-      </p>
+    <header class="section page-header">
+      <div>
+        <h1 class="page-title">Public database</h1>
+        <p class="page-subtitle">
+          {{ stats.totalTracks }} classified track(s) across {{ stats.knownStyles }} known styles.
+          Data lives in <code>data/music.json</code> and updates when Pull Requests are merged.
+        </p>
+      </div>
+      <button
+        type="button"
+        class="button"
+        :disabled="neighborsLoading"
+        title="Fetch similar artists from music-map.com"
+        @click="showNeighbors"
+      >
+        {{ neighborsLoading ? 'Fetching neighbors...' : 'Find neighbors' }}
+      </button>
     </header>
 
     <p v-if="error" class="banner banner--danger">{{ error }}</p>
@@ -144,6 +192,14 @@ const hasFilters = computed(() => search.value.trim().length > 0 || styleFilter.
 </template>
 
 <style scoped>
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
 .results-meta {
   display: flex;
   justify-content: space-between;

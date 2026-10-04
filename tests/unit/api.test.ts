@@ -6,6 +6,7 @@ import type { ApiRequest, ApiResponse } from '../../server/http/types.js'
 import { SlidingWindowRateLimiter } from '../../server/rateLimit.js'
 import { GitHubDatabaseSource } from '../../server/services/database/source.js'
 import { parseMusicDatabase, serializeMusicDatabase } from '../../server/services/music/database.js'
+import type { SimilarArtistService } from '../../server/services/discovery/musicMap.js'
 import type { ModelCatalog } from '../../server/services/opencode/modelCatalog.js'
 import type { MusicAnalysisAgent } from '../../server/services/opencode/types.js'
 import { NoopSongIdentificationService } from '../../server/services/song/types.js'
@@ -16,6 +17,7 @@ import {
   FakeGitHubClient,
   FakeModelCatalog,
   FakeMusicAnalysisAgent,
+  FakeSimilarArtistService,
   makeTrack,
   silentLogger,
   testConfig,
@@ -25,6 +27,7 @@ interface HarnessOptions {
   env?: Record<string, string>
   agent?: MusicAnalysisAgent
   modelCatalog?: ModelCatalog
+  similarArtists?: SimilarArtistService
   seedMusic?: boolean
   clock?: () => number
 }
@@ -69,11 +72,13 @@ function createHarness(options: HarnessOptions = {}) {
   })
 
   const modelCatalog = options.modelCatalog ?? new FakeModelCatalog([], config.opencode.model)
+  const similarArtists = options.similarArtists ?? new FakeSimilarArtistService([])
   const app = createApp({
     config,
     workflow,
     feedbackWorkflow,
     modelCatalog,
+    similarArtists,
     rateLimiter,
     semaphore: new Semaphore(2),
     logger,
@@ -491,6 +496,51 @@ describe('analysis options', () => {
       submissionRequest({ headers: { 'x-context-examples': 'lots' } }),
     )
     expect(response.status).toBe(400)
+  })
+})
+
+describe('similar artists', () => {
+  function similarRequest(method = 'GET', artist?: string): ApiRequest {
+    return {
+      method,
+      path: '/api/similar-artists',
+      query: artist === undefined ? {} : { artist },
+      headers: {},
+      body: Buffer.alloc(0),
+    }
+  }
+
+  it('returns neighbors for an artist through the discovery service', async () => {
+    const similarArtists = new FakeSimilarArtistService(['Justice', 'Gorillaz'])
+    const { app } = createHarness({ similarArtists })
+    const response = await app.handle(similarRequest('GET', 'Daft Punk'))
+
+    expect(response.status).toBe(200)
+    const body = bodyOf(response)
+    expect(body).toMatchObject({ success: true, artist: 'Daft Punk', source: 'music-map' })
+    expect(body.neighbors).toEqual(['Justice', 'Gorillaz'])
+    expect(similarArtists.calls).toBe(1)
+  })
+
+  it('requires an artist query parameter', async () => {
+    const { app } = createHarness()
+    expect((await app.handle(similarRequest('GET'))).status).toBe(400)
+    expect((await app.handle(similarRequest('GET', '   '))).status).toBe(400)
+  })
+
+  it('maps upstream discovery failures to 502', async () => {
+    const { app } = createHarness({
+      similarArtists: new FakeSimilarArtistService([], true),
+    })
+    const response = await app.handle(similarRequest('GET', 'Daft Punk'))
+    expect(response.status).toBe(502)
+    expect(bodyOf(response).reason).toBe('UPSTREAM_ERROR')
+  })
+
+  it('rejects non-GET methods', async () => {
+    const { app } = createHarness()
+    const response = await app.handle(similarRequest('POST', 'Daft Punk'))
+    expect(response.status).toBe(405)
   })
 })
 

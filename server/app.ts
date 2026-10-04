@@ -4,6 +4,8 @@ import { corsHeaders, resolveCorsOrigin } from './cors.js'
 import { ApiError, GitHubError, OpenCodeError } from './errors.js'
 import { getHeader, jsonResponse, type ApiRequest, type ApiResponse } from './http/types.js'
 import type { Logger } from './logger.js'
+import type { SimilarArtistService } from './services/discovery/musicMap.js'
+import { collapseWhitespace, stripControlCharacters } from './utils/text.js'
 import { handleFeedback } from './handlers/feedback.js'
 import { handleAnalyze, handleSubmit } from './handlers/musicSubmission.js'
 import type { Semaphore } from './concurrency.js'
@@ -20,6 +22,7 @@ export interface AppDependencies {
   readonly workflow: MusicSubmissionWorkflow
   readonly feedbackWorkflow: FeedbackWorkflow
   readonly modelCatalog: ModelCatalog
+  readonly similarArtists: SimilarArtistService
   readonly rateLimiter: SlidingWindowRateLimiter
   readonly semaphore: Semaphore
   readonly logger: Logger
@@ -145,6 +148,46 @@ export function createApp(dependencies: AppDependencies): App {
         githubMode: config.github.mode,
         githubWriter: isGitHubWriterConfigured(config),
       })
+    }
+
+    if (path === '/api/similar-artists') {
+      if (request.method !== 'GET') {
+        return jsonResponse(405, { success: false, reason: 'METHOD_NOT_ALLOWED' }, { allow: 'GET' })
+      }
+
+      const artist = collapseWhitespace(stripControlCharacters(request.query.artist ?? ''))
+      if (artist.length === 0 || artist.length > 120) {
+        throw ApiError.badRequest(
+          'The "artist" query parameter is required and must be at most 120 characters',
+        )
+      }
+
+      const limit = dependencies.rateLimiter.check(
+        `${clientKey(request, config.rateLimitSalt)}:similar-artists`,
+      )
+      if (!limit.allowed) {
+        return jsonResponse(
+          429,
+          {
+            success: false,
+            reason: 'RATE_LIMITED',
+            message: 'Too many discovery requests. Please wait and try again.',
+            retryAfterSeconds: limit.retryAfterSeconds,
+          },
+          { 'retry-after': String(limit.retryAfterSeconds) },
+        )
+      }
+
+      try {
+        const result = await dependencies.similarArtists.findNeighbors(artist)
+        return jsonResponse(200, { success: true, ...result })
+      } catch (error) {
+        logger.warn('similar-artist discovery failed', {
+          artistLength: artist.length,
+          message: (error as Error).message,
+        })
+        throw ApiError.upstream('Similar-artist discovery is temporarily unavailable')
+      }
     }
 
     if (path === '/api/opencode/models') {

@@ -65,6 +65,15 @@ const RawConfigSchema = z.object({
     .default(6 * 60 * 60 * 1000),
   opencodeTimeoutMs: z.coerce.number().int().positive().default(120_000),
   opencodeEnvPassthrough: z.array(z.string()).default([]),
+  musicMapEnabled: BooleanFromEnv.default(true),
+  musicMapBaseUrl: z.string().default('https://www.music-map.com'),
+  musicMapTimeoutMs: z.coerce.number().int().positive().default(8_000),
+  musicMapCacheTtlMs: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(6 * 60 * 60 * 1000),
+  musicMapMaxNeighbors: z.coerce.number().int().positive().max(100).default(24),
   songLookupEnabled: BooleanFromEnv.default(true),
   songLookupProvider: z.enum(['musicbrainz', 'none']).default('musicbrainz'),
   songLookupTimeoutMs: z.coerce.number().int().positive().default(8_000),
@@ -117,6 +126,14 @@ export interface GitHubConfig {
   readonly apiUrl: string
 }
 
+export interface MusicMapConfig {
+  readonly enabled: boolean
+  readonly baseUrl: string
+  readonly timeoutMs: number
+  readonly cacheTtlMs: number
+  readonly maxNeighbors: number
+}
+
 export interface SongLookupConfig {
   readonly enabled: boolean
   readonly provider: 'musicbrainz' | 'none'
@@ -147,6 +164,7 @@ export interface AppConfig {
   readonly serveStatic: boolean
   readonly staticDir: string
   readonly opencode: OpenCodeConfig
+  readonly musicMap: MusicMapConfig
   readonly songLookup: SongLookupConfig
   readonly github: GitHubConfig
 }
@@ -217,6 +235,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     opencodeCatalogTtlMs: env.OPENCODE_MODEL_CATALOG_TTL_MS,
     opencodeTimeoutMs: env.OPENCODE_TIMEOUT_MS,
     opencodeEnvPassthrough: splitList(env.OPENCODE_ENV_PASSTHROUGH),
+    musicMapEnabled: env.MUSIC_MAP_ENABLED,
+    musicMapBaseUrl: env.MUSIC_MAP_BASE_URL,
+    musicMapTimeoutMs: env.MUSIC_MAP_TIMEOUT_MS,
+    musicMapCacheTtlMs: env.MUSIC_MAP_CACHE_TTL_MS,
+    musicMapMaxNeighbors: env.MUSIC_MAP_MAX_NEIGHBORS,
     songLookupEnabled: env.SONG_LOOKUP_ENABLED,
     songLookupProvider: env.SONG_LOOKUP_PROVIDER,
     songLookupTimeoutMs: env.SONG_LOOKUP_TIMEOUT_MS,
@@ -286,6 +309,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
           ? raw.opencodeEnvPassthrough
           : DEFAULT_ENV_PASSTHROUGH,
     },
+    musicMap: {
+      enabled: raw.musicMapEnabled,
+      baseUrl: raw.musicMapBaseUrl,
+      timeoutMs: raw.musicMapTimeoutMs,
+      cacheTtlMs: raw.musicMapCacheTtlMs,
+      maxNeighbors: raw.musicMapMaxNeighbors,
+    },
     songLookup: {
       enabled: raw.songLookupEnabled,
       provider: raw.songLookupProvider,
@@ -324,6 +354,7 @@ export function describeConfig(config: AppConfig): Record<string, unknown> {
     opencodeMode: config.opencode.mode,
     opencodeModel: config.opencode.model,
     minStyleConfidence: config.minStyleConfidence,
+    musicMapEnabled: config.musicMap.enabled,
     songLookupEnabled: config.songLookup.enabled,
     songLookupProvider: config.songLookup.provider,
     github: {

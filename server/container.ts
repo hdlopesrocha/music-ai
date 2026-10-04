@@ -8,6 +8,7 @@ import { DryRunGitHubClient } from './services/github/dryRun.js'
 import type { GitHubRepositoryClient } from './services/github/types.js'
 import { createMusicAnalysisAgent } from './services/opencode/agent.js'
 import { OpenCodeModelCatalog, StaticModelCatalog } from './services/opencode/modelCatalog.js'
+import { DisabledSimilarArtistService, MusicMapService } from './services/discovery/musicMap.js'
 import { createSongIdentificationService } from './services/song/service.js'
 import { createDatabaseSource } from './services/database/source.js'
 import { MusicSubmissionWorkflow } from './services/workflow/submitMusic.js'
@@ -51,6 +52,9 @@ export function createRuntime(options: CreateRuntimeOptions = {}): Runtime {
     config.opencode.mode === 'api'
       ? new OpenCodeModelCatalog(config.opencode)
       : new StaticModelCatalog(config.opencode.model)
+  const similarArtists = config.musicMap.enabled
+    ? new MusicMapService(config.musicMap, logger)
+    : new DisabledSimilarArtistService()
   const songIdentification = createSongIdentificationService(config, logger)
   const databaseSource = createDatabaseSource(config, github, rootDir)
 
@@ -76,6 +80,7 @@ export function createRuntime(options: CreateRuntimeOptions = {}): Runtime {
     workflow,
     feedbackWorkflow,
     modelCatalog,
+    similarArtists,
     rateLimiter,
     semaphore,
     logger,

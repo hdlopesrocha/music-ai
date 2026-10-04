@@ -118,6 +118,24 @@ describe('parseAnalysisResult', () => {
     )
   })
 
+  it('normalizes timed lyric segments and derives lyrics from them', () => {
+    const result = parseAnalysisResult({
+      style: 'Pop',
+      confidence: 0.9,
+      lyricsSegments: [
+        { start: 5, end: 4, text: ' Second line ' },
+        { start: 0, end: 3, text: 'First line' },
+        { start: 10, end: 12, text: '   ' },
+      ],
+    })
+
+    expect(result.lyrics).toBe('First line\nSecond line')
+    expect(result.lyricsSegments).toEqual([
+      { start: 0, end: 3, text: 'First line' },
+      { start: 5, end: 7, text: 'Second line' },
+    ])
+  })
+
   it('rejects a malformed song match', () => {
     expect(() =>
       parseAnalysisResult({ style: 'Rock', confidence: 0.9, songMatch: { title: 'x' } }),

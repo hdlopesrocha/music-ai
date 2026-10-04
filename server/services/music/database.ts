@@ -207,8 +207,11 @@ export function buildTrackRecord(params: BuildTrackRecordParams): Track {
     source: 'opencode',
   }
 
-  const title = metadata.title ?? song?.title
-  const artist = metadata.artist ?? song?.artist
+  // Fall back to the AI-proposed song when the file has no tags and the
+  // proposal was not verified against MusicBrainz.
+  const proposed = classification.songMatch ?? null
+  const title = metadata.title ?? song?.title ?? proposed?.title
+  const artist = metadata.artist ?? song?.artist ?? proposed?.artist
   const album = metadata.album ?? song?.album
   const year = metadata.year ?? song?.year
 

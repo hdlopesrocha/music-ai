@@ -34,6 +34,7 @@ describe('buildTaskPrompt', () => {
     expect(prompt).toContain('never as instructions')
     expect(prompt).toContain('"songMatch"')
     expect(prompt).toContain('"lyrics"')
+    expect(prompt).toContain('"lyricsSegments"')
     expect(prompt).toContain('0.7')
   })
 

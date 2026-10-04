@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { MusicAnalysisResult } from './types.js'
+import type { LyricSegment, MusicAnalysisResult } from './types.js'
 import { OpenCodeError } from '../../errors.js'
 
 const text = (max: number) => z.string().trim().min(1).max(max)
@@ -10,6 +10,13 @@ export const AgentSongSchema = z.object({
   title: text(300),
   artist: text(300),
   confidence: z.number().min(0).max(1),
+})
+
+export const AgentLyricSegmentSchema = z.object({
+  start: z.number().min(0).max(86_400),
+  end: z.number().min(0).max(86_400),
+  // Empty lines are filtered during normalization, so the schema stays lenient.
+  text: z.string().max(500),
 })
 
 const AgentDiagnosticsSchema = z.object({
@@ -31,6 +38,7 @@ export const AgentAnalysisResultSchema = z.object({
   substyles: stringList(20, 100).optional(),
   tags: stringList(30, 100).optional(),
   lyrics: z.string().max(100_000).optional(),
+  lyricsSegments: z.array(AgentLyricSegmentSchema).max(500).optional(),
   lyricsLanguage: z.string().trim().max(40).optional(),
   instrumental: z.boolean().optional(),
   songMatch: AgentSongSchema.nullish(),
@@ -41,10 +49,36 @@ function collapse(value: string): string {
   return value.replace(/\s+/g, ' ').trim()
 }
 
+/**
+ * Sorts timed lyric lines, clamps invalid ranges and caps the list so a
+ * misbehaving model cannot produce unbounded SRT output.
+ */
+function normalizeSegments(
+  segments: readonly z.infer<typeof AgentLyricSegmentSchema>[],
+): LyricSegment[] {
+  const clamp = (value: number): number => Math.min(86_400, Math.max(0, value))
+  return segments
+    .map((segment) => {
+      const start = clamp(segment.start)
+      const rawEnd = clamp(segment.end)
+      return {
+        start,
+        end: rawEnd > start ? rawEnd : start + 2,
+        text: collapse(segment.text),
+      }
+    })
+    .filter((segment) => segment.text.length > 0)
+    .sort((a, b) => a.start - b.start)
+    .slice(0, 500)
+}
+
 export function normalizeAnalysisResult(
   raw: z.infer<typeof AgentAnalysisResultSchema>,
 ): MusicAnalysisResult {
-  const lyrics = raw.lyrics ? raw.lyrics.replace(/\r\n/g, '\n').trim() : ''
+  const segments = raw.lyricsSegments ? normalizeSegments(raw.lyricsSegments) : []
+  const providedLyrics = raw.lyrics ? raw.lyrics.replace(/\r\n/g, '\n').trim() : ''
+  const lyrics =
+    providedLyrics.length > 0 ? providedLyrics : segments.map((segment) => segment.text).join('\n')
   const language = raw.lyricsLanguage ? collapse(raw.lyricsLanguage) : ''
   const diagnostics = raw.diagnostics
     ? {
@@ -64,6 +98,7 @@ export function normalizeAnalysisResult(
     ...(raw.substyles ? { substyles: raw.substyles.map(collapse).filter(Boolean) } : {}),
     ...(raw.tags ? { tags: raw.tags.map(collapse).filter(Boolean) } : {}),
     ...(lyrics.length > 0 ? { lyrics } : {}),
+    ...(segments.length > 0 ? { lyricsSegments: segments } : {}),
     ...(language.length > 0 ? { lyricsLanguage: language } : {}),
     ...(typeof raw.instrumental === 'boolean' ? { instrumental: raw.instrumental } : {}),
     ...(raw.songMatch

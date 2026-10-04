@@ -52,6 +52,12 @@ export interface SongProposal {
   confidence: number
 }
 
+export interface LyricSegment {
+  start: number
+  end: number
+  text: string
+}
+
 export interface Classification {
   style: string
   confidence: number
@@ -59,6 +65,7 @@ export interface Classification {
   tags: string[]
   instrumental: boolean | null
   lyrics: string
+  lyricsSegments: LyricSegment[]
   lyricsLanguage: string | null
   songMatch: SongProposal | null
   diagnostics: TrackDiagnostics | null

@@ -176,6 +176,7 @@ describe('anonymous submissions', () => {
     const track = body.track as Record<string, unknown>
     expect(track.style).toBe('Electronic')
     expect(track.fileName).toBe('song.mp3')
+    expect((body.classification as Record<string, unknown>).lyricsSegments).toEqual([])
     expect(github.pullRequests).toHaveLength(1)
     expect(body.pullRequest).toMatchObject({ number: github.pullRequests[0]?.number })
     expect(response.headers['x-content-type-options']).toBe('nosniff')

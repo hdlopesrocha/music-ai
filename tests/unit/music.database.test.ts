@@ -176,6 +176,23 @@ describe('buildTrackRecord', () => {
     expect(track.lyricsLanguage).toBeUndefined()
   })
 
+  it('falls back to the AI song proposal for title and artist', () => {
+    const track = buildTrackRecord({
+      metadata: { ...metadata, title: undefined, artist: undefined },
+      classification: {
+        style: 'Pop',
+        confidence: 0.9,
+        songMatch: { title: 'AI Title', artist: 'AI Artist', confidence: 0.6 },
+      },
+      style: 'Pop',
+      song: null,
+      now: new Date('2026-10-04T12:00:00.000Z'),
+    })
+    expect(track.title).toBe('AI Title')
+    expect(track.artist).toBe('AI Artist')
+    expect(track.song).toBeUndefined()
+  })
+
   it('prefers verified song metadata when tags are missing', () => {
     const track = buildTrackRecord({
       metadata: { ...metadata, title: undefined, artist: undefined },

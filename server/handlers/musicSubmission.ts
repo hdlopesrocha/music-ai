@@ -65,6 +65,7 @@ function publicClassification(classification: MusicAnalysisResult): Record<strin
     tags: classification.tags ?? [],
     instrumental: classification.instrumental ?? null,
     lyrics: classification.lyrics ?? '',
+    lyricsSegments: classification.lyricsSegments ?? [],
     lyricsLanguage: classification.lyricsLanguage ?? null,
     songMatch: classification.songMatch ?? null,
     diagnostics: classification.diagnostics ?? null,

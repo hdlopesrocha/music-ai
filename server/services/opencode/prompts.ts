@@ -71,9 +71,10 @@ ANALYSIS REQUIREMENTS
 3. Provide up to 5 substyles and up to 10 descriptive tags.
 4. Set "instrumental" to true when the track has no meaningful vocals.
 5. When vocals exist, transcribe the lyrics verbatim into "lyrics" (original language). Never invent lyrics; use an empty string when there are none. Full lyrics are used transiently and are never stored.
-6. Set "lyricsLanguage" to the detected language, or an empty string if unknown/instrumental.
-7. If - and only if - the lyrics or metadata clearly identify a known recorded song, set "songMatch" to {"title", "artist", "confidence"}. Otherwise set it to null. Do not guess.
-8. Optionally include diagnostics (bpm, duration in seconds, key, energy 0-1, instrumentation).
+6. For every transcribed line also provide a timed entry in "lyricsSegments" with "start" and "end" in seconds from the beginning of the analysed audio and the line text. Empty array when there are no vocals. These timings are used to generate SRT subtitles.
+7. Set "lyricsLanguage" to the detected language, or an empty string if unknown/instrumental.
+8. If - and only if - the lyrics or metadata clearly identify a known recorded song, set "songMatch" to {"title", "artist", "confidence"}. Otherwise set it to null. Do not guess.
+9. Optionally include diagnostics (bpm, duration in seconds, key, energy 0-1, instrumentation).
 
 OUTPUT FORMAT
 Return valid JSON only, exactly in this shape:
@@ -84,6 +85,7 @@ Return valid JSON only, exactly in this shape:
   "tags": ["<string>"],
   "instrumental": <true or false>,
   "lyrics": "<verbatim transcription or an empty string>",
+  "lyricsSegments": [{ "start": <seconds>, "end": <seconds>, "text": "<single lyric line>" }],
   "lyricsLanguage": "<language name or an empty string>",
   "songMatch": { "title": "<string>", "artist": "<string>", "confidence": <number 0-1> } | null,
   "diagnostics": { "bpm": <number>, "duration": <seconds>, "key": "<string>", "energy": <number 0-1>, "instrumentation": ["<string>"] }

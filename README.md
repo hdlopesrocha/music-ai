@@ -401,6 +401,7 @@ Success:
     "tags": ["analog synthesizers", "retro"],
     "instrumental": false,
     "lyrics": "verbatim transcription (transient, not stored)",
+    "lyricsSegments": [{ "start": 0, "end": 3.5, "text": "First line" }],
     "lyricsLanguage": "English",
     "songMatch": { "title": "Around the World", "artist": "Daft Punk", "confidence": 0.82 }
   },
@@ -557,9 +558,13 @@ that fails either step yields `OPENCODE_FAILED`.
    `SONG_MATCH_MIN_SCORE` are discarded. Provider failures never block a classification.
    The provider is abstracted (`SongIdentificationService`) so AudD/Genius can be added later
    by implementing one interface.
-3. Only canonical metadata is stored in `music.json`. The full lyrics are used transiently
-   for identification, returned to the browser for display, and then discarded.
-4. The result page asks the user whether the detected song is correct. The answer is posted
+3. The model also returns timed lyric lines (`lyricsSegments`), which the result page turns
+   into a downloadable `.srt` subtitle file. Timings are relative to the analysed excerpt.
+4. Only canonical metadata is stored in `music.json`; title and artist fall back to the AI
+   proposal when the file has no tags and MusicBrainz verification is disabled. The full
+   lyrics and segments are used transiently, returned to the browser, and then discarded -
+   they are never committed to the public database.
+5. The result page asks the user whether the detected song is correct. The answer is posted
    as a public comment on the Pull Request.
 
 ---

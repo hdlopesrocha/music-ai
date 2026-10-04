@@ -115,10 +115,14 @@ const musicJsonUrl = computed(() => repositoryFileUrl('data/music.json'))
             <span class="faint">Confidence</span>
             <p class="summary__confidence">{{ formatPercent(confidence) }}</p>
           </div>
-          <div v-if="track?.title || track?.fileName">
+          <div v-if="track?.title || track?.fileName || classification?.songMatch">
             <span class="faint">Track</span>
-            <p class="summary__track">{{ track?.title ?? track?.fileName }}</p>
-            <p v-if="track?.artist" class="faint">{{ track.artist }}</p>
+            <p class="summary__track">
+              {{ track?.title ?? classification?.songMatch?.title ?? track?.fileName }}
+            </p>
+            <p v-if="track?.artist || classification?.songMatch?.artist" class="faint">
+              {{ track?.artist ?? classification?.songMatch?.artist }}
+            </p>
           </div>
         </div>
 
@@ -160,6 +164,8 @@ const musicJsonUrl = computed(() => repositoryFileUrl('data/music.json'))
         :lyrics="classification.lyrics ?? ''"
         :language="classification.lyricsLanguage"
         :instrumental="classification.instrumental"
+        :segments="classification.lyricsSegments ?? []"
+        :file-name="track?.title ?? track?.fileName ?? 'lyrics'"
       />
 
       <section v-if="pullRequest" class="card pr">

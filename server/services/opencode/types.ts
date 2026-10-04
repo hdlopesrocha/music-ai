@@ -32,6 +32,12 @@ export interface SongProposal {
   readonly confidence: number
 }
 
+export interface LyricSegment {
+  readonly start: number
+  readonly end: number
+  readonly text: string
+}
+
 export interface MusicAnalysisDiagnostics {
   readonly bpm?: number
   readonly duration?: number
@@ -47,6 +53,8 @@ export interface MusicAnalysisResult {
   readonly tags?: readonly string[]
   /** Transient transcription. Never persisted in full; used only for identification. */
   readonly lyrics?: string
+  /** Timed lyric lines, used to generate downloadable SRT subtitles. Transient. */
+  readonly lyricsSegments?: readonly LyricSegment[]
   readonly lyricsLanguage?: string
   readonly instrumental?: boolean
   readonly songMatch?: SongProposal | null

@@ -24,7 +24,11 @@ function ensureStyleDatabase(value: unknown): StyleDatabase {
 }
 
 async function fetchJson(fileName: string): Promise<unknown> {
-  const response = await fetch(dataUrl(fileName), { headers: { accept: 'application/json' } })
+  const response = await fetch(dataUrl(fileName), {
+    headers: { accept: 'application/json' },
+    // Never let the browser or a CDN serve a stale database.
+    cache: 'no-store',
+  })
   if (!response.ok) {
     throw new Error(`Unable to load ${fileName} (HTTP ${response.status})`)
   }

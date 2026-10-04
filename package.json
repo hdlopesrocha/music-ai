@@ -12,7 +12,6 @@
     "dev": "concurrently -k -n api,web -c blue,green \"npm:dev:api\" \"npm:dev:web\"",
     "dev:web": "vite",
     "dev:api": "tsx watch server/index.ts",
-    "predev": "node scripts/sync-data.mjs",
     "prebuild": "node scripts/sync-data.mjs",
     "build": "vue-tsc --noEmit -p tsconfig.app.json && vite build",
     "preview": "vite preview",

@@ -70,6 +70,15 @@ jobs:
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
           VITE_REPOSITORY_URL: https://github.com/${{ github.repository }}
 
+      - name: Preserve runtime config from gh-pages
+        run: |
+          git fetch --depth=1 origin gh-pages || true
+          if git show FETCH_HEAD:config.json > dist/config.json 2>/dev/null; then
+            echo "Preserved the existing gh-pages config.json"
+          else
+            echo "No existing config.json; using the build default"
+          fi
+
       - name: Publish to gh-pages
         run: |
           cd dist

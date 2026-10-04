@@ -9,6 +9,7 @@ import type {
   AnalysisOptions,
   AnalyzeOutcome,
   MusicSubmissionWorkflow,
+  Publication,
   SubmitOutcome,
 } from '../services/workflow/submitMusic.js'
 import { createFeedbackToken } from '../utils/hash.js'
@@ -158,11 +159,17 @@ export async function handleSubmit(
         success: true,
         existing: true,
         track: outcome.track,
-        pullRequest: outcome.pullRequest,
+        publication: publicPublication(outcome.publication),
+        pullRequest: publicPullRequest(outcome.publication),
+        commit: publicCommit(outcome.publication),
         feedbackToken: null,
         requestId: deps.requestId,
       })
     }
+
+    const publication = outcome.publication
+    const pullRequest = publicPullRequest(publication)
+    const feedbackNumber = publication.type === 'pull-request' ? publication.number : undefined
 
     return jsonResponse(
       201,
@@ -172,18 +179,46 @@ export async function handleSubmit(
         classification: publicClassification(outcome.classification),
         song: outcome.song,
         track: outcome.track,
-        pullRequest: {
-          number: outcome.pullRequest.number,
-          url: outcome.pullRequest.url,
-          branch: outcome.pullRequest.branch,
-        },
-        feedbackToken: buildFeedbackToken(deps.config, outcome.track, outcome.pullRequest.number),
+        publication: publicPublication(publication),
+        pullRequest,
+        commit: publicCommit(publication),
+        feedbackToken:
+          feedbackNumber !== undefined
+            ? buildFeedbackToken(deps.config, outcome.track, feedbackNumber)
+            : null,
         requestId: deps.requestId,
       },
-      { location: outcome.pullRequest.url },
+      { location: publication.url },
     )
   } finally {
     await prepared.workspace.cleanup()
+  }
+}
+
+function publicPublication(publication: Publication | null): Record<string, unknown> | null {
+  if (!publication) return null
+  return {
+    type: publication.type,
+    url: publication.url,
+    branch: publication.branch,
+    number: publication.number ?? null,
+    commitSha: publication.commitSha ?? null,
+  }
+}
+
+function publicPullRequest(publication: Publication | null): Record<string, unknown> | null {
+  if (!publication || publication.type !== 'pull-request' || publication.number === undefined) {
+    return null
+  }
+  return { number: publication.number, url: publication.url, branch: publication.branch }
+}
+
+function publicCommit(publication: Publication | null): Record<string, unknown> | null {
+  if (!publication || publication.type !== 'commit') return null
+  return {
+    sha: publication.commitSha ?? null,
+    url: publication.url,
+    branch: publication.branch,
   }
 }
 

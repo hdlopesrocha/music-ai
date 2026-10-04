@@ -101,6 +101,10 @@ export class DryRunGitHubClient implements GitHubRepositoryClient {
     const files = this.branchFiles.get(params.branch) ?? new Map<string, string>()
     files.set(params.path, params.content)
     this.branchFiles.set(params.branch, files)
+    // Direct commits to the base branch must be visible to later reads.
+    if (params.branch === this.baseBranch) {
+      this.baseFiles.set(params.path, params.content)
+    }
     const commitSha = this.fileSha(params.path, params.content)
     this.branches.set(params.branch, commitSha)
     this.logger.info('[dry-run] committed file', { branch: params.branch, path: params.path })

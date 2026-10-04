@@ -49,6 +49,14 @@ describe('loadConfig', () => {
     const config = loadConfig({ RATE_LIMIT_SALT: 'salt-value' })
     expect(config.feedbackTokenSecret).toBe('salt-value')
   })
+
+  it('defaults to Pull Request write mode and accepts direct commits', () => {
+    expect(testConfig().github.writeMode).toBe('pr')
+    expect(testConfig({ GITHUB_WRITE_MODE: 'direct' }).github.writeMode).toBe('direct')
+    expect(() => loadConfig({ GITHUB_WRITE_MODE: 'force-push' })).toThrowError(
+      /Invalid server configuration/,
+    )
+  })
 })
 
 describe('isGitHubWriterConfigured', () => {

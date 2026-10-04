@@ -129,9 +129,9 @@ describe('submit', () => {
     if (outcome.status !== 'classified') throw new Error('expected classified')
 
     const expectedBranch = buildBranchName('Electronic', input.sha256)
-    expect(outcome.pullRequest.branch).toBe(expectedBranch)
+    expect(outcome.publication.branch).toBe(expectedBranch)
     expect(github.branches.has(expectedBranch)).toBe(true)
-    expect(outcome.pullRequest.number).toBeGreaterThan(0)
+    expect(outcome.publication.number).toBeGreaterThan(0)
 
     const committed = github.branchFiles.get(expectedBranch)?.get(config.musicDatabasePath)
     expect(committed).toBeDefined()
@@ -198,7 +198,7 @@ describe('submit', () => {
     const outcome = await workflow.submit({ input, requestId: 'r8' })
     expect(outcome.status).toBe('existing')
     if (outcome.status === 'existing') {
-      expect(outcome.pullRequest).toBeNull()
+      expect(outcome.publication).toBeNull()
       expect(outcome.track.style).toBe('Jazz')
     }
     expect(github.pullRequests).toHaveLength(0)
@@ -213,7 +213,7 @@ describe('submit', () => {
     const outcome = await workflow.submit({ input, requestId: 'r9' })
     expect(outcome.status).toBe('existing')
     if (outcome.status === 'existing') {
-      expect(outcome.pullRequest?.number).toBe(55)
+      expect(outcome.publication?.number).toBe(55)
     }
     expect(github.updateFileCalls).toBe(0)
   })
@@ -235,6 +235,42 @@ describe('submit', () => {
     const outcome = await workflow.submit({ input: makeAudioInput(), requestId: 'r11' })
     expect(outcome.status).toBe('classified')
     expect(github.pullRequests).toHaveLength(1)
+  })
+
+  it('commits directly to the base branch without a Pull Request', async () => {
+    const input = makeAudioInput()
+    const { workflow, github, config } = createWorkflow({
+      env: { GITHUB_WRITE_MODE: 'direct' },
+    })
+    const outcome = await workflow.submit({ input, requestId: 'direct-1' })
+
+    expect(outcome.status).toBe('classified')
+    if (outcome.status !== 'classified') throw new Error('expected classified')
+    expect(outcome.publication.type).toBe('commit')
+    expect(outcome.publication.branch).toBe('main')
+    expect(outcome.publication.commitSha).toBeTruthy()
+    expect(outcome.publication.url).toContain('/commit/')
+    expect(github.pullRequests).toHaveLength(0)
+
+    const database = parseMusicDatabase(github.baseFiles.get(config.musicDatabasePath) ?? '')
+    expect(database.tracks).toHaveLength(1)
+    expect(database.tracks[0]?.id).toBe(input.sha256)
+  })
+
+  it('retries direct commits and reports duplicates from the base branch', async () => {
+    const { workflow, github } = createWorkflow({ env: { GITHUB_WRITE_MODE: 'direct' } })
+    github.updateFileFailures = 1
+
+    const first = await workflow.submit({ input: makeAudioInput(), requestId: 'direct-2' })
+    expect(first.status).toBe('classified')
+    expect(github.updateFileCalls).toBe(2)
+    expect(github.pullRequests).toHaveLength(0)
+
+    const second = await workflow.submit({ input: makeAudioInput(), requestId: 'direct-3' })
+    expect(second.status).toBe('existing')
+    if (second.status === 'existing') {
+      expect(second.publication).toBeNull()
+    }
   })
 
   it('fails with a conflict when retries are exhausted', async () => {

@@ -494,6 +494,25 @@ describe('analysis options', () => {
   })
 })
 
+describe('direct write mode', () => {
+  it('commits to the base branch instead of opening a Pull Request', async () => {
+    const { app, github, config } = createHarness({ env: { GITHUB_WRITE_MODE: 'direct' } })
+    const response = await app.handle(submissionRequest())
+
+    expect(response.status).toBe(201)
+    const body = bodyOf(response)
+    expect(body.pullRequest).toBeNull()
+    expect(body.commit).toBeTruthy()
+    expect((body.publication as Record<string, unknown>).type).toBe('commit')
+    expect(body.feedbackToken).toBeNull()
+    expect(String(response.headers.location)).toContain('/commit/')
+    expect(github.pullRequests).toHaveLength(0)
+
+    const database = parseMusicDatabase(github.baseFiles.get(config.musicDatabasePath) ?? '')
+    expect(database.tracks).toHaveLength(1)
+  })
+})
+
 describe('database consistency', () => {
   it('commits valid JSON containing exactly one new track', async () => {
     const { app, github, config } = createHarness()

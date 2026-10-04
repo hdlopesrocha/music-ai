@@ -33,6 +33,7 @@ function createClient(handler: (request: RecordedRequest) => Response) {
   const client = new GitHubAppClient({
     config: {
       mode: 'app',
+      writeMode: 'pr',
       owner: 'test-owner',
       repository: 'test-repo',
       baseBranch: 'main',

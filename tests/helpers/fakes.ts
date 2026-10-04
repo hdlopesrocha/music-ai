@@ -180,6 +180,10 @@ export class FakeGitHubClient implements GitHubRepositoryClient {
     const files = this.branchFiles.get(params.branch) ?? new Map<string, string>()
     files.set(params.path, params.content)
     this.branchFiles.set(params.branch, files)
+    // Direct commits to the base branch must be visible to later reads.
+    if (params.branch === 'main') {
+      this.baseFiles.set(params.path, params.content)
+    }
     const commitSha = contentSha(params.content)
     this.branches.set(params.branch, commitSha)
     return { commitSha }

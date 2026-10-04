@@ -73,6 +73,7 @@ const RawConfigSchema = z.object({
     .string()
     .default('AI-Music-Style-Database/1.0 (+https://github.com/OWNER/REPOSITORY)'),
   githubMode: z.enum(['app', 'dry-run']).default('app'),
+  githubWriteMode: z.enum(['pr', 'direct']).default('pr'),
   githubOwner: z.string().optional(),
   githubRepository: z.string().optional(),
   githubBaseBranch: z.string().min(1).default('main'),
@@ -101,6 +102,11 @@ export interface OpenCodeConfig {
 
 export interface GitHubConfig {
   readonly mode: 'app' | 'dry-run'
+  /**
+   * `pr`     - commit to a submissions branch and open a public Pull Request
+   * `direct` - commit the change straight to the base branch, no Pull Request
+   */
+  readonly writeMode: 'pr' | 'direct'
   readonly owner?: string
   readonly repository?: string
   readonly baseBranch: string
@@ -215,6 +221,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     musicBrainzBaseUrl: env.MUSICBRAINZ_BASE_URL,
     musicBrainzUserAgent: env.MUSICBRAINZ_USER_AGENT,
     githubMode: env.GITHUB_MODE,
+    githubWriteMode: env.GITHUB_WRITE_MODE,
     githubOwner: env.GITHUB_OWNER,
     githubRepository: env.GITHUB_REPOSITORY,
     githubBaseBranch: env.GITHUB_BASE_BRANCH,
@@ -285,6 +292,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     },
     github: {
       mode: raw.githubMode,
+      writeMode: raw.githubWriteMode,
       owner: raw.githubOwner,
       repository: raw.githubRepository,
       baseBranch: raw.githubBaseBranch,
@@ -316,6 +324,7 @@ export function describeConfig(config: AppConfig): Record<string, unknown> {
     songLookupProvider: config.songLookup.provider,
     github: {
       mode: config.github.mode,
+      writeMode: config.github.writeMode,
       owner: config.github.owner ?? null,
       repository: config.github.repository ?? null,
       baseBranch: config.github.baseBranch,

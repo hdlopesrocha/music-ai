@@ -77,11 +77,19 @@ export type AnalyzeOutcome =
       readonly song: VerifiedSongMatch | null
     }
 
+export interface Publication {
+  readonly type: 'pull-request' | 'commit'
+  readonly url: string
+  readonly branch: string
+  readonly number?: number
+  readonly commitSha?: string
+}
+
 export type SubmitOutcome =
   | {
       readonly status: 'existing'
       readonly track: Track
-      readonly pullRequest: PullRequestInfo | null
+      readonly publication: Publication | null
     }
   | Extract<AnalyzeOutcome, { status: 'unknown_style' | 'low_confidence' }>
   | {
@@ -89,7 +97,7 @@ export type SubmitOutcome =
       readonly track: Track
       readonly classification: MusicAnalysisResult
       readonly song: VerifiedSongMatch | null
-      readonly pullRequest: PullRequestInfo
+      readonly publication: Publication
     }
 
 const defaultSleep = (ms: number): Promise<void> =>
@@ -135,24 +143,23 @@ export class MusicSubmissionWorkflow {
     const analysis = await this.analyze(input)
 
     if (analysis.status === 'existing') {
-      return { status: 'existing', track: analysis.track, pullRequest: null }
+      return { status: 'existing', track: analysis.track, publication: null }
     }
     if (analysis.status !== 'classified') return analysis
 
     if (!this.github || !this.databaseSource.writable) {
       throw ApiError.misconfigured(
-        'The GitHub App is not configured, so Pull Requests cannot be created in this environment',
+        'The GitHub writer is not configured, so the database cannot be updated in this environment',
       )
     }
 
-    const result = await this.createPullRequest(
-      analysis.track,
-      analysis.classification,
-      input.requestId,
-    )
+    const result =
+      this.config.github.writeMode === 'direct'
+        ? await this.commitDirectly(analysis.track, input.requestId)
+        : await this.createPullRequest(analysis.track, analysis.classification, input.requestId)
 
     if (result.kind === 'existing') {
-      return { status: 'existing', track: result.track, pullRequest: result.pullRequest }
+      return { status: 'existing', track: result.track, publication: result.publication }
     }
 
     return {
@@ -160,7 +167,7 @@ export class MusicSubmissionWorkflow {
       track: analysis.track,
       classification: analysis.classification,
       song: analysis.song,
-      pullRequest: result.pullRequest,
+      publication: result.publication,
     }
   }
 
@@ -270,8 +277,8 @@ export class MusicSubmissionWorkflow {
     classification: MusicAnalysisResult,
     requestId: string,
   ): Promise<
-    | { kind: 'created'; pullRequest: PullRequestInfo }
-    | { kind: 'existing'; track: Track; pullRequest: PullRequestInfo | null }
+    | { kind: 'created'; publication: Publication }
+    | { kind: 'existing'; track: Track; publication: Publication | null }
   > {
     const github = this.github
     if (!github) throw ApiError.misconfigured('GitHub App is not configured')
@@ -285,14 +292,18 @@ export class MusicSubmissionWorkflow {
         const openPullRequest = await github.findOpenPullRequest(branch)
         if (openPullRequest) {
           const committed = await this.findTrackOnBranch(github, branch, musicPath, track.id)
-          return { kind: 'existing', track: committed ?? track, pullRequest: openPullRequest }
+          return {
+            kind: 'existing',
+            track: committed ?? track,
+            publication: this.pullRequestPublication(openPullRequest),
+          }
         }
 
         const baseFile = await github.getFile(musicPath, baseBranch)
         const baseDatabase = parseMusicDatabase(baseFile.content)
         const duplicate = findTrackById(baseDatabase, track.id)
         if (duplicate) {
-          return { kind: 'existing', track: duplicate, pullRequest: null }
+          return { kind: 'existing', track: duplicate, publication: null }
         }
 
         const updated = insertTrack(baseDatabase, track)
@@ -351,7 +362,9 @@ export class MusicSubmissionWorkflow {
         } catch (error) {
           if (error instanceof GitHubError && error.isConflict) {
             const existing = await github.findOpenPullRequest(branch)
-            if (existing) return { kind: 'existing', track, pullRequest: existing }
+            if (existing) {
+              return { kind: 'existing', track, publication: this.pullRequestPublication(existing) }
+            }
           }
           throw error
         }
@@ -363,7 +376,7 @@ export class MusicSubmissionWorkflow {
           trackId: track.id.slice(0, 12),
           style: track.style,
         })
-        return { kind: 'created', pullRequest }
+        return { kind: 'created', publication: this.pullRequestPublication(pullRequest) }
       } catch (error) {
         const retryable =
           error instanceof GitHubError &&
@@ -374,6 +387,102 @@ export class MusicSubmissionWorkflow {
           this.logger.warn('concurrent or transient GitHub error, retrying', {
             requestId,
             branch,
+            attempt,
+            delay,
+            error: (error as Error).message,
+          })
+          await this.sleep(delay)
+          continue
+        }
+        throw error
+      }
+    }
+
+    throw ApiError.conflict(
+      'The database was updated concurrently by other submissions; please retry',
+    )
+  }
+
+  private pullRequestPublication(pullRequest: PullRequestInfo): Publication {
+    return {
+      type: 'pull-request',
+      url: pullRequest.url,
+      branch: pullRequest.branch,
+      number: pullRequest.number,
+    }
+  }
+
+  private commitUrl(commitSha: string): string {
+    const { owner, repository } = this.config.github
+    return owner && repository
+      ? `https://github.com/${owner}/${repository}/commit/${commitSha}`
+      : commitSha
+  }
+
+  /**
+   * Direct write mode: commits the new database entry straight to the base
+   * branch with optimistic concurrency (blob SHA), retrying on conflicts.
+   * No branch and no Pull Request are created.
+   */
+  private async commitDirectly(
+    track: Track,
+    requestId: string,
+  ): Promise<
+    | { kind: 'created'; publication: Publication }
+    | { kind: 'existing'; track: Track; publication: null }
+  > {
+    const github = this.github
+    if (!github) throw ApiError.misconfigured('GitHub writer is not configured')
+
+    const baseBranch = this.config.github.baseBranch
+    const musicPath = this.config.musicDatabasePath
+
+    for (let attempt = 1; attempt <= MAX_WRITE_ATTEMPTS; attempt += 1) {
+      try {
+        const baseFile = await github.getFile(musicPath, baseBranch)
+        const database = parseMusicDatabase(baseFile.content)
+        const duplicate = findTrackById(database, track.id)
+        if (duplicate) {
+          return { kind: 'existing', track: duplicate, publication: null }
+        }
+
+        const content = serializeMusicDatabase(insertTrack(database, track))
+        // Never commit anything that would not parse back through the schema.
+        parseMusicDatabase(content)
+
+        const { commitSha } = await github.updateFile({
+          path: musicPath,
+          content,
+          message: buildCommitMessage(track),
+          branch: baseBranch,
+          sha: baseFile.sha,
+        })
+
+        const publication: Publication = {
+          type: 'commit',
+          url: this.commitUrl(commitSha),
+          branch: baseBranch,
+          commitSha,
+        }
+
+        this.logger.info('direct commit created', {
+          requestId,
+          branch: baseBranch,
+          commitSha: commitSha.slice(0, 12),
+          trackId: track.id.slice(0, 12),
+          style: track.style,
+        })
+        return { kind: 'created', publication }
+      } catch (error) {
+        const retryable =
+          error instanceof GitHubError &&
+          (error.isConflict || error.code === 'NETWORK' || error.code === 'API_ERROR')
+
+        if (retryable && attempt < MAX_WRITE_ATTEMPTS) {
+          const delay = RETRY_DELAYS_MS[attempt - 1] ?? 900
+          this.logger.warn('concurrent or transient GitHub error, retrying direct commit', {
+            requestId,
+            branch: baseBranch,
             attempt,
             delay,
             error: (error as Error).message,

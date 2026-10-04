@@ -28,7 +28,7 @@ export const ANALYSIS_STAGES: readonly AnalysisStage[] = [
   { key: 'analyzing', label: 'Analyzing music...' },
   { key: 'validating', label: 'Validating detected style...' },
   { key: 'database', label: 'Checking database...' },
-  { key: 'pull-request', label: 'Creating Pull Request...' },
+  { key: 'publish', label: 'Publishing to the database...' },
 ]
 
 const STAGE_TICK_MS = 1400

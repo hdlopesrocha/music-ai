@@ -18,10 +18,13 @@ const response = computed(() => state.response)
 const track = computed(() => response.value?.track ?? null)
 const classification = computed(() => response.value?.classification ?? null)
 const pullRequest = computed(() => response.value?.pullRequest ?? null)
+const commit = computed(() => response.value?.commit ?? null)
 const feedbackToken = computed(() => response.value?.feedbackToken ?? null)
 
 const created = computed(() =>
-  Boolean(response.value?.success && !response.value.existing && pullRequest.value),
+  Boolean(
+    response.value?.success && !response.value.existing && (pullRequest.value || commit.value),
+  ),
 )
 const existing = computed(() => Boolean(response.value?.success && response.value.existing))
 const unknownStyle = computed(() =>
@@ -55,7 +58,12 @@ const musicJsonUrl = computed(() => repositoryFileUrl('data/music.json'))
     <template v-else>
       <section v-if="created" class="banner banner--success">
         <h1 class="banner__title">Music analyzed successfully.</h1>
-        <p class="muted">
+        <p v-if="commit" class="muted">
+          The classification was committed directly to
+          <code>{{ commit.branch }}</code
+          >. The public database updates when the deployment finishes.
+        </p>
+        <p v-else class="muted">
           A public Pull Request was created. A maintainer will review and merge it; the database
           updates automatically afterwards.
         </p>
@@ -166,6 +174,22 @@ const musicJsonUrl = computed(() => repositoryFileUrl('data/music.json'))
           rel="noopener noreferrer"
         >
           Open Pull Request
+        </a>
+      </section>
+
+      <section v-if="commit" class="card pr">
+        <div>
+          <span class="faint">Committed directly</span>
+          <p class="pr__number">{{ commit.sha ? commit.sha.slice(0, 7) : 'commit' }}</p>
+          <span class="faint">branch: {{ commit.branch }}</span>
+        </div>
+        <a
+          class="button button--primary"
+          :href="commit.url"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          View commit
         </a>
       </section>
 

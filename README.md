@@ -621,6 +621,7 @@ Server variables (never exposed to the browser):
 | `MUSICBRAINZ_USER_AGENT` | project UA | Required by MusicBrainz |
 | `FEEDBACK_TOKEN_SECRET` | `RATE_LIMIT_SALT` | HMAC secret for feedback tokens |
 | `GITHUB_MODE` | `app` | `app` \| `dry-run` |
+| `GITHUB_WRITE_MODE` | `pr` | `pr` opens a Pull Request; `direct` commits to the base branch |
 | `GITHUB_OWNER` / `GITHUB_REPOSITORY` / `GITHUB_BASE_BRANCH` | - | Target repository |
 | `GITHUB_APP_ID` / `GITHUB_APP_PRIVATE_KEY` | - | GitHub App credentials |
 | `GITHUB_API_URL` | `https://api.github.com` | For GitHub Enterprise |
@@ -696,6 +697,24 @@ API, the built Vue UI and `data/*.json` on a single origin.
 The serverless `api/*` entries remain available for Vercel/Netlify deployments, but OpenCode
 cannot run inside a function there: set `OPENCODE_MODE=http` and point `OPENCODE_ENDPOINT` at
 the gateway (`npm run start:gateway`) running on a Node host.
+
+### Write modes: Pull Request or direct commit
+
+`GITHUB_WRITE_MODE` controls how accepted classifications reach the repository:
+
+| Mode | Behaviour |
+| --- | --- |
+| `pr` (default) | Commits to a `submissions/<style>-<id>` branch and opens a public Pull Request. Reviewable, and the feedback comment flow works. |
+| `direct` | Commits straight to `GITHUB_BASE_BRANCH` (e.g. `main`/`master`) with the same optimistic-concurrency retries and schema validation. No branch, no review, no feedback comments. |
+
+Both modes use the GitHub App and the same duplicate/style/schema validation; the only
+difference is where the commit lands. Direct mode is intended for single-maintainer setups
+or fully trusted deployments. If the target branch is protected, the GitHub App must be
+allowed to bypass the protection or the commit will be rejected with `GITHUB_FAILED`.
+
+In direct mode the API responds with `publication.type: "commit"` and a `commit` object
+(`{ sha, url, branch }`) instead of `pullRequest`; the UI shows a "Committed directly" card
+and the feedback question is skipped.
 
 ---
 

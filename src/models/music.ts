@@ -70,6 +70,20 @@ export interface PullRequestRef {
   branch: string
 }
 
+export interface CommitRef {
+  sha: string | null
+  url: string
+  branch: string
+}
+
+export interface Publication {
+  type: 'pull-request' | 'commit'
+  url: string
+  branch: string
+  number: number | null
+  commitSha: string | null
+}
+
 export interface StyleCount {
   style: string
   count: number

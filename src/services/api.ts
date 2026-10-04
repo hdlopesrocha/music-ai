@@ -1,4 +1,11 @@
-import type { Classification, PullRequestRef, Track, VerifiedSong } from '@/models/music'
+import type {
+  Classification,
+  CommitRef,
+  Publication,
+  PullRequestRef,
+  Track,
+  VerifiedSong,
+} from '@/models/music'
 import { isGitHubPagesHost, resolveApiBaseUrl } from '@/services/runtimeConfig'
 
 const API_NOT_CONFIGURED_MESSAGE =
@@ -12,7 +19,9 @@ export interface SubmissionResponse {
   track?: Track
   classification?: Classification
   song?: VerifiedSong | null
+  publication?: Publication | null
   pullRequest?: PullRequestRef | null
+  commit?: CommitRef | null
   feedbackToken?: string | null
   reason?: string
   style?: string

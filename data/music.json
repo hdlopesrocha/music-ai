@@ -1,4 +1,38 @@
 {
   "version": 1,
-  "tracks": []
+  "tracks": [
+    {
+      "id": "ba4c82cec5f7bb87c426811abea332beab83e317abf5995c2e5586c1d73b4f1f",
+      "fileName": "real-commit.wav",
+      "style": "Techno",
+      "confidence": 0.75,
+      "detectedAt": "2026-10-04T16:31:41.109Z",
+      "source": "opencode",
+      "duration": 8,
+      "substyles": [
+        "Minimal Techno"
+      ],
+      "tags": [
+        "four-on-the-floor",
+        "electronic drums",
+        "hi-hat",
+        "repetitive",
+        "minimal",
+        "club",
+        "synthetic"
+      ],
+      "hasLyrics": false,
+      "diagnostics": {
+        "bpm": 128,
+        "duration": 8,
+        "key": "C minor",
+        "energy": 0.55,
+        "instrumentation": [
+          "kick drum",
+          "closed hi-hat",
+          "electronic percussion"
+        ]
+      }
+    }
+  ]
 }

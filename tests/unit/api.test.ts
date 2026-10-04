@@ -6,6 +6,7 @@ import type { ApiRequest, ApiResponse } from '../../server/http/types.js'
 import { SlidingWindowRateLimiter } from '../../server/rateLimit.js'
 import { GitHubDatabaseSource } from '../../server/services/database/source.js'
 import { parseMusicDatabase, serializeMusicDatabase } from '../../server/services/music/database.js'
+import { sha256Hex } from '../../server/utils/hash.js'
 import type { SimilarArtistService } from '../../server/services/discovery/musicMap.js'
 import type { ModelCatalog } from '../../server/services/opencode/modelCatalog.js'
 import type { MusicAnalysisAgent } from '../../server/services/opencode/types.js'
@@ -567,6 +568,38 @@ describe('direct write mode', () => {
       { start: 0, end: 3, text: 'First line' },
       { start: 4, end: 7, text: 'Second line' },
     ])
+  })
+
+  it('replaces an existing entry when X-Replace-Existing is set', async () => {
+    const body = fakeMp3()
+    const existingTrack = {
+      id: sha256Hex(body),
+      fileName: 'old.mp3',
+      style: 'Jazz',
+      confidence: 0.8,
+      detectedAt: '2025-01-01T00:00:00.000Z',
+      source: 'opencode' as const,
+    }
+    const agent = new FakeMusicAnalysisAgent({ style: 'Techno', confidence: 0.91 })
+    const { app, github, config } = createHarness({
+      agent,
+      env: { GITHUB_WRITE_MODE: 'direct' },
+      seedMusic: false,
+    })
+    github.seedBaseFile(
+      config.musicDatabasePath,
+      serializeMusicDatabase({ version: 1, tracks: [existingTrack] }),
+    )
+
+    const response = await app.handle(
+      submissionRequest({ headers: { 'x-replace-existing': 'true' } }),
+    )
+    expect(response.status).toBe(201)
+    expect(bodyOf(response).replaced).toBe(true)
+
+    const database = parseMusicDatabase(github.baseFiles.get(config.musicDatabasePath) ?? '')
+    expect(database.tracks).toHaveLength(1)
+    expect(database.tracks[0]?.style).toBe('Techno')
   })
 
   it('commits to the base branch instead of opening a Pull Request', async () => {

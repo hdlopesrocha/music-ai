@@ -19,8 +19,9 @@ export function buildBranchName(style: string, trackId: string): string {
   return `submissions/${slugify(style, 'style')}-${trackId.slice(0, 12)}`
 }
 
-export function buildCommitMessage(track: Track): string {
-  return `data: add ${track.style} classification for ${slugify(track.fileName, 'track')} (${track.id.slice(0, 12)})`
+export function buildCommitMessage(track: Track, replace = false): string {
+  const verb = replace ? 'replace' : 'add'
+  return `data: ${verb} ${track.style} classification for ${slugify(track.fileName, 'track')} (${track.id.slice(0, 12)})`
 }
 
 export function buildPullRequestTitle(track: Track): string {

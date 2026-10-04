@@ -150,6 +150,18 @@ export function insertTrack(database: MusicDatabase, track: Track): MusicDatabas
   return { ...database, tracks: [...database.tracks, track] }
 }
 
+/**
+ * Replaces the entry with the same id in place (order preserved) or appends it
+ * when it does not exist yet.
+ */
+export function replaceTrack(database: MusicDatabase, track: Track): MusicDatabase {
+  const index = database.tracks.findIndex((entry) => entry.id === track.id)
+  if (index === -1) return { ...database, tracks: [...database.tracks, track] }
+  const tracks = [...database.tracks]
+  tracks[index] = track
+  return { ...database, tracks }
+}
+
 function uniqueLimited(values: readonly string[], maxItems: number, maxLength: number): string[] {
   const seen = new Set<string>()
   const result: string[] = []

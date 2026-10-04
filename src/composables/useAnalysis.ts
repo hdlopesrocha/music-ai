@@ -72,6 +72,7 @@ interface AnalysisState {
   analysisOptions: AnalysisOptionsResponse | null
   selectedModel: string | null
   contextExamples: number | null
+  replaceExisting: boolean
 }
 
 const state = reactive<AnalysisState>({
@@ -85,6 +86,7 @@ const state = reactive<AnalysisState>({
   analysisOptions: null,
   selectedModel: readStored(MODEL_STORAGE_KEY),
   contextExamples: null,
+  replaceExisting: false,
 })
 
 let ticker: number | null = null
@@ -180,13 +182,15 @@ export async function selectFile(file: File): Promise<void> {
   state.sha256 = hash
 }
 
-export async function startAnalysis(): Promise<void> {
+export async function startAnalysis(options: { replace?: boolean } = {}): Promise<void> {
   const file = state.file
   if (!file || state.status === 'processing') return
 
+  const replace = options.replace ?? state.replaceExisting
   state.status = 'processing'
   state.errorMessage = null
-  state.response = null
+  // Keep the previous result visible while re-analyzing a duplicate.
+  if (!replace) state.response = null
   state.stageIndex = 0
   startTicker()
 
@@ -194,6 +198,7 @@ export async function startAnalysis(): Promise<void> {
     const response = await submitMusic(file, {
       ...(state.selectedModel ? { model: state.selectedModel } : {}),
       ...(state.contextExamples !== null ? { contextExamples: state.contextExamples } : {}),
+      ...(replace ? { replace: true } : {}),
     })
     stopTicker()
     state.response = response
@@ -254,6 +259,10 @@ export function setContextExamples(count: number | null): void {
   writeStored(CONTEXT_STORAGE_KEY, count === null ? null : String(count))
 }
 
+export function setReplaceExisting(value: boolean): void {
+  state.replaceExisting = value
+}
+
 export function resetAnalysis(): void {
   stopTicker()
   state.status = 'idle'
@@ -292,5 +301,6 @@ export function useAnalysis() {
     loadAnalysisOptions,
     setSelectedModel,
     setContextExamples,
+    setReplaceExisting,
   }
 }

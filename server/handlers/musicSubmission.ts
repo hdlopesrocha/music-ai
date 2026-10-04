@@ -33,7 +33,7 @@ async function resolveAnalysisOptions(
   req: ApiRequest,
   deps: SubmissionHandlerDependencies,
 ): Promise<AnalysisOptions> {
-  const options: { model?: string; contextExamples?: number } = {}
+  const options: { model?: string; contextExamples?: number; replace?: boolean } = {}
 
   const modelHeader = getHeader(req, 'x-analysis-model')?.trim()
   if (modelHeader && modelHeader.length > 0) {
@@ -52,6 +52,11 @@ async function resolveAnalysisOptions(
       throw ApiError.badRequest('x-context-examples must be a non-negative integer')
     }
     options.contextExamples = Math.min(parsed, deps.config.maxContextExamples)
+  }
+
+  const replaceHeader = getHeader(req, 'x-replace-existing')?.trim().toLowerCase()
+  if (replaceHeader === 'true' || replaceHeader === '1') {
+    options.replace = true
   }
 
   return options
@@ -177,6 +182,7 @@ export async function handleSubmit(
       {
         success: true,
         existing: false,
+        replaced: outcome.replaced,
         classification: publicClassification(outcome.classification),
         song: outcome.song,
         track: outcome.track,

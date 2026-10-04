@@ -21,6 +21,7 @@ import {
   findTrackById,
   insertTrack,
   parseMusicDatabase,
+  replaceTrack,
   serializeMusicDatabase,
   type MusicDatabase,
   type Track,
@@ -47,6 +48,8 @@ export interface AnalysisOptions {
   readonly model?: string
   /** Number of database examples sent as context; clamped to the configured maximum. */
   readonly contextExamples?: number
+  /** Re-analyze and replace the existing entry when the audio was seen before. */
+  readonly replace?: boolean
 }
 
 export interface AnalyzeInput {
@@ -98,6 +101,8 @@ export type SubmitOutcome =
       readonly classification: MusicAnalysisResult
       readonly song: VerifiedSongMatch | null
       readonly publication: Publication
+      /** True when an existing entry was replaced instead of added. */
+      readonly replaced: boolean
     }
 
 const defaultSleep = (ms: number): Promise<void> =>
@@ -158,10 +163,16 @@ export class MusicSubmissionWorkflow {
       )
     }
 
+    const replace = input.options?.replace === true
     const result =
       this.config.github.writeMode === 'direct'
-        ? await this.commitDirectly(analysis.track, input.requestId)
-        : await this.createPullRequest(analysis.track, analysis.classification, input.requestId)
+        ? await this.commitDirectly(analysis.track, input.requestId, replace)
+        : await this.createPullRequest(
+            analysis.track,
+            analysis.classification,
+            input.requestId,
+            replace,
+          )
 
     if (result.kind === 'existing') {
       return { status: 'existing', track: result.track, publication: result.publication }
@@ -173,6 +184,7 @@ export class MusicSubmissionWorkflow {
       classification: analysis.classification,
       song: analysis.song,
       publication: result.publication,
+      replaced: result.replaced,
     }
   }
 
@@ -184,12 +196,18 @@ export class MusicSubmissionWorkflow {
     options: AnalysisOptions = {},
   ): Promise<AnalyzeOutcome> {
     const existing = findTrackById(database, input.sha256)
-    if (existing) {
+    if (existing && !options.replace) {
       this.logger.info('duplicate track detected', {
         requestId,
         trackId: input.sha256.slice(0, 12),
       })
       return { status: 'existing', track: existing }
+    }
+    if (existing) {
+      this.logger.info('duplicate track detected, replacing analysis', {
+        requestId,
+        trackId: input.sha256.slice(0, 12),
+      })
     }
 
     const contextTotal = Math.max(
@@ -284,8 +302,9 @@ export class MusicSubmissionWorkflow {
     track: Track,
     classification: MusicAnalysisResult,
     requestId: string,
+    replace: boolean,
   ): Promise<
-    | { kind: 'created'; publication: Publication }
+    | { kind: 'created'; publication: Publication; replaced: boolean }
     | { kind: 'existing'; track: Track; publication: Publication | null }
   > {
     const github = this.github
@@ -310,11 +329,14 @@ export class MusicSubmissionWorkflow {
         const baseFile = await github.getFile(musicPath, baseBranch)
         const baseDatabase = parseMusicDatabase(baseFile.content)
         const duplicate = findTrackById(baseDatabase, track.id)
-        if (duplicate) {
+        if (duplicate && !replace) {
           return { kind: 'existing', track: duplicate, publication: null }
         }
+        const replaced = Boolean(duplicate) && replace
 
-        const updated = insertTrack(baseDatabase, track)
+        const updated = replace
+          ? replaceTrack(baseDatabase, track)
+          : insertTrack(baseDatabase, track)
         const content = serializeMusicDatabase(updated)
         // Never commit anything that would not parse back through the schema.
         parseMusicDatabase(content)
@@ -338,7 +360,7 @@ export class MusicSubmissionWorkflow {
         if (branchSha) {
           const branchFile = await github.getFile(musicPath, branch)
           const branchDatabase = parseMusicDatabase(branchFile.content)
-          if (findTrackById(branchDatabase, track.id)) {
+          if (findTrackById(branchDatabase, track.id) && !replace) {
             needsUpdate = false
           } else {
             fileSha = branchFile.sha
@@ -349,7 +371,7 @@ export class MusicSubmissionWorkflow {
           await github.updateFile({
             path: musicPath,
             content,
-            message: buildCommitMessage(track),
+            message: buildCommitMessage(track, replaced),
             branch,
             sha: fileSha,
           })
@@ -383,8 +405,9 @@ export class MusicSubmissionWorkflow {
           pullRequest: pullRequest.number,
           trackId: track.id.slice(0, 12),
           style: track.style,
+          replaced,
         })
-        return { kind: 'created', publication: this.pullRequestPublication(pullRequest) }
+        return { kind: 'created', publication: this.pullRequestPublication(pullRequest), replaced }
       } catch (error) {
         const retryable =
           error instanceof GitHubError &&
@@ -435,8 +458,9 @@ export class MusicSubmissionWorkflow {
   private async commitDirectly(
     track: Track,
     requestId: string,
+    replace: boolean,
   ): Promise<
-    | { kind: 'created'; publication: Publication }
+    | { kind: 'created'; publication: Publication; replaced: boolean }
     | { kind: 'existing'; track: Track; publication: null }
   > {
     const github = this.github
@@ -450,18 +474,20 @@ export class MusicSubmissionWorkflow {
         const baseFile = await github.getFile(musicPath, baseBranch)
         const database = parseMusicDatabase(baseFile.content)
         const duplicate = findTrackById(database, track.id)
-        if (duplicate) {
+        if (duplicate && !replace) {
           return { kind: 'existing', track: duplicate, publication: null }
         }
+        const replaced = Boolean(duplicate) && replace
 
-        const content = serializeMusicDatabase(insertTrack(database, track))
+        const updated = replace ? replaceTrack(database, track) : insertTrack(database, track)
+        const content = serializeMusicDatabase(updated)
         // Never commit anything that would not parse back through the schema.
         parseMusicDatabase(content)
 
         const { commitSha } = await github.updateFile({
           path: musicPath,
           content,
-          message: buildCommitMessage(track),
+          message: buildCommitMessage(track, replaced),
           branch: baseBranch,
           sha: baseFile.sha,
         })
@@ -479,8 +505,9 @@ export class MusicSubmissionWorkflow {
           commitSha: commitSha.slice(0, 12),
           trackId: track.id.slice(0, 12),
           style: track.style,
+          replaced,
         })
-        return { kind: 'created', publication }
+        return { kind: 'created', publication, replaced }
       } catch (error) {
         const retryable =
           error instanceof GitHubError &&

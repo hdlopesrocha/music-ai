@@ -452,6 +452,11 @@ Duplicate:
 { "success": true, "existing": true, "track": { "style": "Electronic" }, "pullRequest": null }
 ```
 
+To refresh a duplicate, send `X-Replace-Existing: true` (the Analyze page has a matching
+checkbox and the result page a "Replace analysis" button): the file is analyzed again and the
+entry is replaced in place - style, confidence, song, subtitles and diagnostics - with a new
+commit or Pull Request. The response then contains `"replaced": true`.
+
 Errors use `{ "success": false, "reason": "PAYLOAD_TOO_LARGE", "message": "...", "requestId": "..." }`
 with reasons such as `BAD_REQUEST`, `UNSUPPORTED_MEDIA_TYPE`, `PAYLOAD_TOO_LARGE`,
 `RATE_LIMITED`, `OPENCODE_FAILED`, `OPENCODE_TIMEOUT`, `GITHUB_FAILED`, `DATABASE_INVALID`,

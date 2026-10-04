@@ -257,6 +257,39 @@ describe('submit', () => {
     expect(database.tracks[0]?.id).toBe(input.sha256)
   })
 
+  it('replaces an existing entry when replace is requested', async () => {
+    const input = makeAudioInput()
+    const existingTrack = {
+      id: input.sha256,
+      fileName: 'old-name.mp3',
+      style: 'Jazz',
+      confidence: 0.8,
+      detectedAt: '2025-01-01T00:00:00.000Z',
+      source: 'opencode',
+    }
+    const { workflow, github, config } = createWorkflow({
+      music: { version: 1, tracks: [existingTrack] },
+      agentResult: { style: 'Techno', confidence: 0.91 },
+      env: { GITHUB_WRITE_MODE: 'direct' },
+    })
+
+    const outcome = await workflow.submit({
+      input,
+      requestId: 'replace-1',
+      options: { replace: true },
+    })
+
+    expect(outcome.status).toBe('classified')
+    if (outcome.status !== 'classified') throw new Error('expected classified')
+    expect(outcome.replaced).toBe(true)
+    expect(outcome.track.style).toBe('Techno')
+
+    const database = parseMusicDatabase(github.baseFiles.get(config.musicDatabasePath) ?? '')
+    expect(database.tracks).toHaveLength(1)
+    expect(database.tracks[0]?.style).toBe('Techno')
+    expect(github.pullRequests).toHaveLength(0)
+  })
+
   it('retries direct commits and reports duplicates from the base branch', async () => {
     const { workflow, github } = createWorkflow({ env: { GITHUB_WRITE_MODE: 'direct' } })
     github.updateFileFailures = 1

@@ -17,6 +17,7 @@ const {
   loadAnalysisOptions,
   setSelectedModel,
   setContextExamples,
+  setReplaceExisting,
 } = useAnalysis()
 const router = useRouter()
 
@@ -37,6 +38,10 @@ function onModelChange(event: Event): void {
 function onContextChange(event: Event): void {
   const value = (event.target as HTMLSelectElement).value
   setContextExamples(value.length > 0 ? Number.parseInt(value, 10) : null)
+}
+
+function onReplaceChange(event: Event): void {
+  setReplaceExisting((event.target as HTMLInputElement).checked)
 }
 
 onMounted(async () => {
@@ -170,6 +175,10 @@ function analyzeAgain(): void {
               </option>
             </select>
           </label>
+          <label class="field field--checkbox">
+            <input type="checkbox" :checked="state.replaceExisting" @change="onReplaceChange" />
+            <span>Replace existing analysis if this file was already classified</span>
+          </label>
           <p class="faint analysis-settings__note">
             Only models that support audio analysis are listed. Context size controls how many
             existing classifications are sent to the model as examples.
@@ -181,7 +190,7 @@ function analyzeAgain(): void {
             type="button"
             class="button button--primary button--large"
             :disabled="state.status === 'error'"
-            @click="startAnalysis"
+            @click="startAnalysis()"
           >
             Analyze Music
           </button>

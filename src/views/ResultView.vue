@@ -8,7 +8,7 @@ import { useAnalysis } from '@/composables/useAnalysis'
 import { repositoryFileUrl } from '@/services/database'
 import { formatDuration, formatPercent } from '@/utils/format'
 
-const { state, loadPersistedSession, resetAnalysis } = useAnalysis()
+const { state, loadPersistedSession, resetAnalysis, startAnalysis } = useAnalysis()
 
 onMounted(() => {
   loadPersistedSession()
@@ -20,6 +20,12 @@ const classification = computed(() => response.value?.classification ?? null)
 const pullRequest = computed(() => response.value?.pullRequest ?? null)
 const commit = computed(() => response.value?.commit ?? null)
 const feedbackToken = computed(() => response.value?.feedbackToken ?? null)
+const replaced = computed(() => Boolean(response.value?.replaced))
+const canReplace = computed(() => Boolean(state.file))
+
+async function replaceAnalysis(): Promise<void> {
+  await startAnalysis({ replace: true })
+}
 
 const created = computed(() =>
   Boolean(
@@ -56,8 +62,21 @@ const musicJsonUrl = computed(() => repositoryFileUrl('data/music.json'))
     </template>
 
     <template v-else>
+      <section v-if="state.status === 'processing'" class="banner banner--warning">
+        <h1 class="banner__title">Re-analyzing...</h1>
+        <p class="muted">
+          OpenCode is analyzing this file again. Depending on the track length this can take up to a
+          couple of minutes.
+        </p>
+      </section>
+
       <section v-if="created" class="banner banner--success">
-        <h1 class="banner__title">Music analyzed successfully.</h1>
+        <h1 class="banner__title">
+          {{ replaced ? 'Analysis replaced successfully.' : 'Music analyzed successfully.' }}
+        </h1>
+        <p v-if="replaced" class="muted">
+          The previous database entry was replaced with the new analysis.
+        </p>
         <p v-if="commit" class="muted">
           The classification was committed directly to
           <code>{{ commit.branch }}</code
@@ -72,7 +91,8 @@ const musicJsonUrl = computed(() => repositoryFileUrl('data/music.json'))
       <section v-else-if="existing" class="banner banner--warning">
         <h1 class="banner__title">This track has already been classified.</h1>
         <p class="muted">
-          The SHA-256 identifier already exists in the database, so no new Pull Request was created.
+          The SHA-256 identifier already exists in the database. Use "Replace analysis" to run the
+          AI again and update the existing entry.
         </p>
       </section>
 
@@ -206,11 +226,33 @@ const musicJsonUrl = computed(() => repositoryFileUrl('data/music.json'))
         :feedback-token="feedbackToken"
       />
 
-      <section v-if="existing && musicJsonUrl" class="card">
-        <p class="muted">The existing entry is part of the public dataset.</p>
-        <a class="button" :href="musicJsonUrl" target="_blank" rel="noopener noreferrer">
-          View the database file
-        </a>
+      <section v-if="existing" class="card">
+        <p class="muted">
+          The existing entry is part of the public dataset.
+          <template v-if="!canReplace">
+            Select the same file again from the Analyze page to replace its analysis.
+          </template>
+        </p>
+        <div class="actions">
+          <button
+            v-if="canReplace"
+            type="button"
+            class="button button--primary"
+            :disabled="state.status === 'processing'"
+            @click="replaceAnalysis"
+          >
+            Replace analysis
+          </button>
+          <a
+            v-if="musicJsonUrl"
+            class="button"
+            :href="musicJsonUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            View the database file
+          </a>
+        </div>
       </section>
 
       <div class="actions">

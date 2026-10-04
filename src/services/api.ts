@@ -16,6 +16,7 @@ const API_NOT_CONFIGURED_MESSAGE =
 export interface SubmissionResponse {
   success: boolean
   existing?: boolean
+  replaced?: boolean
   track?: Track
   classification?: Classification
   song?: VerifiedSong | null
@@ -64,6 +65,8 @@ export interface AnalysisOptionsResponse {
 export interface SubmitOptions {
   model?: string
   contextExamples?: number
+  /** Re-analyze and replace the existing entry when the audio was seen before. */
+  replace?: boolean
 }
 
 export class ApiRequestError extends Error {
@@ -91,6 +94,7 @@ function buildHeaders(file: File, options: SubmitOptions = {}): Record<string, s
   if (options.contextExamples !== undefined) {
     headers['x-context-examples'] = String(options.contextExamples)
   }
+  if (options.replace) headers['x-replace-existing'] = 'true'
   return headers
 }
 

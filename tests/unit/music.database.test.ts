@@ -7,6 +7,7 @@ import {
   insertTrack,
   parseMusicDatabase,
   parseStyleDatabase,
+  replaceTrack,
   serializeMusicDatabase,
 } from '../../server/services/music/database.js'
 import { makeTrack } from '../helpers/fakes.js'
@@ -99,6 +100,14 @@ describe('insertTrack and findTrackById', () => {
     expect(database.tracks).toHaveLength(0)
     expect(updated.tracks).toHaveLength(1)
     expect(findTrackById(updated, track.id)?.style).toBe('Electronic')
+  })
+
+  it('replaces an existing track in place', () => {
+    const original = makeTrack({ id: 'a'.repeat(64), style: 'Jazz' })
+    const database = parseMusicDatabase(serializeMusicDatabase({ version: 1, tracks: [original] }))
+    const updated = replaceTrack(database, makeTrack({ id: 'a'.repeat(64), style: 'Techno' }))
+    expect(updated.tracks).toHaveLength(1)
+    expect(updated.tracks[0]?.style).toBe('Techno')
   })
 
   it('rejects duplicate ids (case-insensitive)', () => {

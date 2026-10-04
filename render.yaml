@@ -10,7 +10,9 @@ services:
     runtime: image
     image:
       url: ghcr.io/hdlopesrocha/music-ai-api:latest
-    plan: starter
+    # Free works for a trial (sleeps after inactivity, 512 MB). Use "starter"
+    # for an always-on instance.
+    plan: free
     healthCheckPath: /api/health
     autoDeploy: true
     envVars:
@@ -18,6 +20,8 @@ services:
         value: 'true'
       - key: OPENCODE_MODE
         value: cli
+      - key: MAX_CONCURRENT_ANALYSES
+        value: '1'
       - key: GITHUB_MODE
         value: app
       - key: GITHUB_OWNER

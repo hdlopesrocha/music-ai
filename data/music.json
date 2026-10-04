@@ -120,8 +120,8 @@
       "id": "ea35c904afb216f3afd765c01978758b2294188c2cd43b6c415b71e4ac8887f9",
       "fileName": "if-i-loved-you-1945.mp3",
       "style": "Jazz",
-      "confidence": 0.78,
-      "detectedAt": "2026-10-04T17:59:02.663Z",
+      "confidence": 0.95,
+      "detectedAt": "2026-10-04T18:00:23.634Z",
       "source": "opencode",
       "title": "If I Loved You",
       "artist": "Larry Clinton's Orchestra;The Toon Timers;Hammerstein II and Richard Rodgers",
@@ -130,8 +130,9 @@
       "substyles": [
         "Big Band",
         "Traditional Pop",
+        "Swing",
         "Dance Band",
-        "Swing"
+        "Show Tune"
       ],
       "tags": [
         "big band orchestra",
@@ -149,38 +150,39 @@
       "lyricsLanguage": "English",
       "subtitles": [
         {
-          "start": 127,
-          "end": 134,
-          "text": "Oh, if I loved you,"
-        },
-        {
-          "start": 134,
-          "end": 142,
-          "text": "time and again I would try to say"
-        },
-        {
-          "start": 142,
+          "start": 146,
           "end": 151,
-          "text": "all I'd want you to know."
+          "text": "Oh, if I loved you"
         },
         {
-          "start": 151,
+          "start": 152,
           "end": 157,
-          "text": "If I loved you..."
+          "text": "Time and again I would try to say"
+        },
+        {
+          "start": 158,
+          "end": 164,
+          "text": "All I'd want you to know"
+        },
+        {
+          "start": 168,
+          "end": 173,
+          "text": "If I loved you"
         }
       ],
       "diagnostics": {
-        "bpm": 84,
+        "bpm": 72,
         "duration": 197,
         "key": "Ab major",
-        "energy": 0.35,
+        "energy": 0.45,
         "instrumentation": [
-          "brass",
+          "brass section",
           "saxophones",
           "strings",
           "acoustic bass",
-          "drum kit with brushes",
-          "male vocals"
+          "brush drums",
+          "piano",
+          "male crooner vocals"
         ]
       }
     }

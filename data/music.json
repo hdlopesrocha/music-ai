@@ -37,11 +37,8 @@
     {
       "id": "50a1435eb6c635ed99831b2a324fbc7fea7554dd8e2c84d74f6a5c011eabda66",
       "fileName": "José González - Heartbeats (Lyric Video) [ik_BQYbbZ5U].mp3",
-      "style": "Folk",
-      "confidence": 0.92,
-      "detectedAt": "2026-10-04T16:43:42.764Z",
-      "source": "opencode",
       "duration": 161,
+      "style": "Folk",
       "substyles": [
         "Acoustic Folk",
         "Indie Folk"
@@ -56,8 +53,11 @@
         "singer-songwriter",
         "warm production"
       ],
+      "confidence": 0.92,
       "hasLyrics": true,
       "lyricsLanguage": "English",
+      "detectedAt": "2026-10-04T16:43:42.764Z",
+      "source": "opencode",
       "diagnostics": {
         "bpm": 82,
         "duration": 161,
@@ -66,6 +66,53 @@
         "instrumentation": [
           "acoustic guitar",
           "male vocals"
+        ]
+      }
+    },
+    {
+      "id": "496710d70380c36c1f08ba6258b660b748acda68178f2d934f4844b6d48b24bf",
+      "fileName": "Moblack, Salif Keita & Cesária Evora - Yamore (Lyrics) [qZNYIaMGpF0].mp3",
+      "style": "House",
+      "confidence": 0.88,
+      "detectedAt": "2026-10-04T17:23:52.832Z",
+      "source": "opencode",
+      "title": "Yamore",
+      "artist": "MobiBlack, Salif Keita & Cesária Evora",
+      "duration": 248,
+      "substyles": [
+        "Deep House",
+        "Afro House",
+        "Tropical House"
+      ],
+      "tags": [
+        "four-on-the-floor",
+        "organic percussion",
+        "shaker",
+        "congas",
+        "warm bassline",
+        "male vocals",
+        "female vocals",
+        "multi-lingual",
+        "soulful",
+        "danceable"
+      ],
+      "hasLyrics": true,
+      "lyricsLanguage": "French, Portuguese, Cape Verdean Creole",
+      "diagnostics": {
+        "bpm": 122,
+        "duration": 248,
+        "key": "B minor",
+        "energy": 0.62,
+        "instrumentation": [
+          "kick drum",
+          "shaker",
+          "congas",
+          "hand percussion",
+          "synth bass",
+          "warm synth pads",
+          "clean electric guitar",
+          "male lead vocals",
+          "female backing vocals"
         ]
       }
     }

@@ -486,13 +486,34 @@ of the system (workflow, GitHub logic, Vue app) never imports OpenCode-specific 
 agent can be replaced without touching the frontend or database logic. There is also
 `MockMusicAnalysisAgent` for offline development and tests.
 
-Three transports:
+Four transports:
 
 | `OPENCODE_MODE` | Description |
 | --- | --- |
-| `cli` (default) | Spawns `opencode run` locally with a fixed agent, model, dir and timeout |
-| `http` | `POST`s to a remote OpenCode gateway (`OPENCODE_ENDPOINT`) with bearer auth |
+| `api` | Calls the OpenCode Go/Zen API (`OPENCODE_API_URL`) with `OPENCODE_API_KEY`, sending the audio inline as `input_audio`. **This is the only mode where the model actually listens to the audio.** |
+| `cli` (default) | Spawns `opencode run` locally with a fixed agent, model, dir and timeout. CLI models cannot read binary audio, so classification relies on metadata only. |
+| `http` | `POST`s to a remote OpenCode analysis gateway (`OPENCODE_ENDPOINT`) with bearer auth |
 | `mock` | Deterministic offline classifier; never used in production |
+
+### Model and context selection
+
+In `api` mode the server discovers which models can analyse audio: it lists the
+`GET {OPENCODE_API_URL}/models` catalogue, joins it with the public models.dev metadata,
+and keeps only models that accept **audio** input and speak the OpenAI-compatible
+chat-completions protocol. `OPENCODE_MEDIA_MODELS` can pin an explicit allowlist instead.
+
+- `GET /api/opencode/models` returns the selectable models, the default, and the context
+  bounds. Anonymous submissions may pass `X-Analysis-Model` and `X-Context-Examples`.
+- The model header is rejected with `400` unless it is in the media-capable catalog.
+- The context header is clamped to `MAX_CONTEXT_EXAMPLES`, so callers can never inflate
+  prompts beyond the configured maximum.
+- The Analyze page renders these as "Model" and "Context size" selectors and remembers the
+  choice locally.
+
+Direct API mode accepts **WAV and MP3** inline (the OpenAI audio formats) up to
+`OPENCODE_MAX_AUDIO_BYTES`. Free OpenCode models cannot be used through the API
+("free tier can only be used from within OpenCode"), so choose a model included in your
+Go/Zen plan.
 
 For serverless deployments (where OpenCode cannot run inside the function), run the gateway
 on a dedicated host and set `OPENCODE_MODE=http`. The gateway (`server/opencode-gateway.ts`)
@@ -582,10 +603,14 @@ Server variables (never exposed to the browser):
 | `MIN_STYLE_CONFIDENCE` | `0.7` | Rejection threshold |
 | `MAX_CONTEXT_EXAMPLES` / `..._PER_STYLE` | `24` / `3` | Few-shot context bounds |
 | `MUSIC_DATABASE_PATH` / `STYLE_DATABASE_PATH` | `data/music.json` / `data/styles.json` | Repo paths |
-| `OPENCODE_MODE` | `cli` | `cli` \| `http` \| `mock` |
+| `OPENCODE_MODE` | `cli` | `api` \| `cli` \| `http` \| `mock` |
 | `OPENCODE_BIN` | `opencode` | CLI binary |
-| `OPENCODE_MODEL` | - | `provider/model` |
-| `OPENCODE_AGENT` | `music-classifier` | Agent name |
+| `OPENCODE_MODEL` | mode default | Model id (`api`: `mimo-v2.6-flash`, otherwise `provider/model`) |
+| `OPENCODE_AGENT` | `music-classifier` | Agent name (CLI mode) |
+| `OPENCODE_API_URL` / `OPENCODE_API_KEY` | Go endpoint / - | Direct OpenCode API (`api` mode) |
+| `OPENCODE_MEDIA_MODELS` | auto | Explicit allowlist of selectable media models |
+| `OPENCODE_MAX_AUDIO_BYTES` / `..._OUTPUT_TOKENS` | `12 MB` / `3000` | Inline audio and output caps |
+| `OPENCODE_MODEL_CATALOG_URL` / `..._TTL_MS` | models.dev / 6 h | Capability catalogue |
 | `OPENCODE_ENDPOINT` / `OPENCODE_GATEWAY_TOKEN` | - | Remote gateway for `http` mode (always set a token) |
 | `GATEWAY_PORT` | `8788` | Port for `npm run start:gateway` |
 | `OPENCODE_TIMEOUT_MS` | `120000` | Hard timeout |

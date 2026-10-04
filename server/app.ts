@@ -9,6 +9,7 @@ import { handleAnalyze, handleSubmit } from './handlers/musicSubmission.js'
 import type { Semaphore } from './concurrency.js'
 import type { SlidingWindowRateLimiter } from './rateLimit.js'
 import { DatabaseValidationError } from './services/music/database.js'
+import type { ModelCatalog } from './services/opencode/modelCatalog.js'
 import type { FeedbackWorkflow } from './services/workflow/submitFeedback.js'
 import type { MusicSubmissionWorkflow } from './services/workflow/submitMusic.js'
 
@@ -18,6 +19,7 @@ export interface AppDependencies {
   readonly config: AppConfig
   readonly workflow: MusicSubmissionWorkflow
   readonly feedbackWorkflow: FeedbackWorkflow
+  readonly modelCatalog: ModelCatalog
   readonly rateLimiter: SlidingWindowRateLimiter
   readonly semaphore: Semaphore
   readonly logger: Logger
@@ -145,6 +147,20 @@ export function createApp(dependencies: AppDependencies): App {
       })
     }
 
+    if (path === '/api/opencode/models') {
+      if (request.method !== 'GET') {
+        return jsonResponse(405, { success: false, reason: 'METHOD_NOT_ALLOWED' }, { allow: 'GET' })
+      }
+      const info = await dependencies.modelCatalog.info()
+      return jsonResponse(200, {
+        ...info,
+        contextExamples: {
+          default: config.maxContextExamples,
+          max: config.maxContextExamples,
+        },
+      })
+    }
+
     const isAnalyze = path === '/api/analyze'
     const isSubmit = path === '/api/submit'
     const isFeedback = path === '/api/feedback'
@@ -201,6 +217,7 @@ export function createApp(dependencies: AppDependencies): App {
       const handlerDeps = {
         config,
         workflow: dependencies.workflow,
+        modelCatalog: dependencies.modelCatalog,
         logger,
         requestId,
       }

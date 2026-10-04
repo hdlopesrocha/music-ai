@@ -38,6 +38,25 @@ export interface FeedbackResponse {
   message?: string
 }
 
+export interface AnalysisModelOption {
+  id: string
+  label: string
+  media: string[]
+}
+
+export interface AnalysisOptionsResponse {
+  models: AnalysisModelOption[]
+  defaultModel: string
+  allowOverride: boolean
+  source: 'allowlist' | 'catalog' | 'none'
+  contextExamples: { default: number; max: number }
+}
+
+export interface SubmitOptions {
+  model?: string
+  contextExamples?: number
+}
+
 export class ApiRequestError extends Error {
   readonly status: number
   readonly reason: string | undefined
@@ -54,11 +73,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function buildHeaders(file: File): Record<string, string> {
-  return {
+function buildHeaders(file: File, options: SubmitOptions = {}): Record<string, string> {
+  const headers: Record<string, string> = {
     'content-type': file.type && file.type.length > 0 ? file.type : 'application/octet-stream',
     'x-music-filename': encodeURIComponent(file.name),
   }
+  if (options.model) headers['x-analysis-model'] = options.model
+  if (options.contextExamples !== undefined) {
+    headers['x-context-examples'] = String(options.contextExamples)
+  }
+  return headers
 }
 
 async function parseResponse(response: Response): Promise<SubmissionResponse> {
@@ -104,23 +128,46 @@ async function resolveUrl(path: string): Promise<string> {
   return path
 }
 
-async function postAudio(path: string, file: File): Promise<SubmissionResponse> {
+async function postAudio(
+  path: string,
+  file: File,
+  options: SubmitOptions = {},
+): Promise<SubmissionResponse> {
   const response = await fetch(await resolveUrl(path), {
     method: 'POST',
-    headers: buildHeaders(file),
+    headers: buildHeaders(file, options),
     body: file,
   })
   return parseResponse(response)
 }
 
 /** Full workflow: analyze, validate and (on success) open a public Pull Request. */
-export function submitMusic(file: File): Promise<SubmissionResponse> {
-  return postAudio('/api/submit', file)
+export function submitMusic(file: File, options: SubmitOptions = {}): Promise<SubmissionResponse> {
+  return postAudio('/api/submit', file, options)
 }
 
 /** Analysis only: never creates a Pull Request. */
-export function analyzeMusic(file: File): Promise<SubmissionResponse> {
-  return postAudio('/api/analyze', file)
+export function analyzeMusic(file: File, options: SubmitOptions = {}): Promise<SubmissionResponse> {
+  return postAudio('/api/analyze', file, options)
+}
+
+/**
+ * Lists the media-capable models the server allows and the context-size bounds.
+ * Returns null when the API is unreachable or not configured; the Analyze page
+ * then simply uses the server default.
+ */
+export async function fetchAnalysisOptions(): Promise<AnalysisOptionsResponse | null> {
+  try {
+    const response = await fetch(await resolveUrl('/api/opencode/models'), {
+      headers: { accept: 'application/json' },
+      cache: 'no-store',
+    })
+    if (!response.ok) return null
+    const payload: unknown = await response.json()
+    return isRecord(payload) ? (payload as unknown as AnalysisOptionsResponse) : null
+  } catch {
+    return null
+  }
 }
 
 export async function sendFeedback(request: FeedbackRequest): Promise<FeedbackResponse> {

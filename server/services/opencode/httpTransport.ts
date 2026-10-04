@@ -23,6 +23,7 @@ export class HttpOpenCodeTransport implements OpenCodeTransport {
     input: AudioAnalysisInput
     systemPrompt: string
     prompt: string
+    model?: string
   }): Promise<string> {
     const endpoint = this.config.endpoint
     if (!endpoint) {
@@ -44,7 +45,7 @@ export class HttpOpenCodeTransport implements OpenCodeTransport {
         headers,
         signal: controller.signal,
         body: JSON.stringify({
-          model: this.config.model,
+          model: params.model ?? this.config.model,
           agent: this.config.agent,
           systemPrompt: params.systemPrompt,
           prompt: params.prompt,

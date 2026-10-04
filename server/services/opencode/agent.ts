@@ -11,6 +11,7 @@ import { extractJsonObject } from './parse.js'
 import { parseAnalysisResult } from './schema.js'
 import { CliOpenCodeTransport } from './cliTransport.js'
 import { HttpOpenCodeTransport } from './httpTransport.js'
+import { OpenCodeApiTransport } from './apiTransport.js'
 
 /**
  * The only agent implementation that knows about OpenCode. It translates the
@@ -27,7 +28,12 @@ export class OpenCodeMusicAnalysisAgent implements MusicAnalysisAgent {
     context: MusicAnalysisContext,
   ): Promise<MusicAnalysisResult> {
     const prompt = buildTaskPrompt(input, context)
-    const raw = await this.transport.run({ input, systemPrompt: SYSTEM_PROMPT, prompt })
+    const raw = await this.transport.run({
+      input,
+      systemPrompt: SYSTEM_PROMPT,
+      prompt,
+      ...(context.model ? { model: context.model } : {}),
+    })
     return parseAnalysisResult(extractJsonObject(raw))
   }
 }
@@ -99,6 +105,8 @@ export function createMusicAnalysisAgent(config: AppConfig): MusicAnalysisAgent 
       return new MockMusicAnalysisAgent()
     case 'http':
       return new OpenCodeMusicAnalysisAgent(new HttpOpenCodeTransport(config.opencode))
+    case 'api':
+      return new OpenCodeMusicAnalysisAgent(new OpenCodeApiTransport(config.opencode))
     case 'cli':
     default:
       return new OpenCodeMusicAnalysisAgent(new CliOpenCodeTransport(config.opencode))

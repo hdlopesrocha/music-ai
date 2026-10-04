@@ -41,12 +41,27 @@ const RawConfigSchema = z.object({
   styleDatabasePath: z.string().min(1).default('data/styles.json'),
   serveStatic: BooleanFromEnv.default(false),
   staticDir: z.string().min(1).default('dist'),
-  opencodeMode: z.enum(['cli', 'http', 'mock']).default('cli'),
+  opencodeMode: z.enum(['cli', 'http', 'api', 'mock']).default('cli'),
   opencodeBin: z.string().min(1).default('opencode'),
-  opencodeModel: z.string().min(1).default('anthropic/claude-sonnet-4-5'),
+  opencodeModel: z.string().min(1).optional(),
   opencodeAgent: z.string().min(1).default('music-classifier'),
   opencodeEndpoint: z.string().optional(),
   opencodeGatewayToken: z.string().optional(),
+  opencodeApiUrl: z.string().default('https://opencode.ai/zen/go/v1'),
+  opencodeApiKey: z.string().optional(),
+  opencodeMediaModels: z.array(z.string()).default([]),
+  opencodeMaxAudioBytes: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(12 * 1024 * 1024),
+  opencodeMaxOutputTokens: z.coerce.number().int().positive().default(3_000),
+  opencodeCatalogUrl: z.string().default('https://models.dev/api.json'),
+  opencodeCatalogTtlMs: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(6 * 60 * 60 * 1000),
   opencodeTimeoutMs: z.coerce.number().int().positive().default(120_000),
   opencodeEnvPassthrough: z.array(z.string()).default([]),
   songLookupEnabled: BooleanFromEnv.default(true),
@@ -67,12 +82,19 @@ const RawConfigSchema = z.object({
 })
 
 export interface OpenCodeConfig {
-  readonly mode: 'cli' | 'http' | 'mock'
+  readonly mode: 'cli' | 'http' | 'api' | 'mock'
   readonly bin: string
   readonly model: string
   readonly agent: string
   readonly endpoint?: string
   readonly gatewayToken?: string
+  readonly apiUrl: string
+  readonly apiKey?: string
+  readonly mediaModels: readonly string[]
+  readonly maxAudioBytes: number
+  readonly maxOutputTokens: number
+  readonly catalogUrl: string
+  readonly catalogTtlMs: number
   readonly timeoutMs: number
   readonly envPassthrough: readonly string[]
 }
@@ -177,6 +199,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     opencodeAgent: env.OPENCODE_AGENT,
     opencodeEndpoint: env.OPENCODE_ENDPOINT,
     opencodeGatewayToken: env.OPENCODE_GATEWAY_TOKEN,
+    opencodeApiUrl: env.OPENCODE_API_URL,
+    opencodeApiKey: env.OPENCODE_API_KEY,
+    opencodeMediaModels: splitList(env.OPENCODE_MEDIA_MODELS),
+    opencodeMaxAudioBytes: env.OPENCODE_MAX_AUDIO_BYTES,
+    opencodeMaxOutputTokens: env.OPENCODE_MAX_OUTPUT_TOKENS,
+    opencodeCatalogUrl: env.OPENCODE_MODEL_CATALOG_URL,
+    opencodeCatalogTtlMs: env.OPENCODE_MODEL_CATALOG_TTL_MS,
     opencodeTimeoutMs: env.OPENCODE_TIMEOUT_MS,
     opencodeEnvPassthrough: splitList(env.OPENCODE_ENV_PASSTHROUGH),
     songLookupEnabled: env.SONG_LOOKUP_ENABLED,
@@ -227,10 +256,19 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     opencode: {
       mode: raw.opencodeMode,
       bin: raw.opencodeBin,
-      model: raw.opencodeModel,
+      model:
+        raw.opencodeModel ??
+        (raw.opencodeMode === 'api' ? 'mimo-v2.6-flash' : 'anthropic/claude-sonnet-4-5'),
       agent: raw.opencodeAgent,
       endpoint: raw.opencodeEndpoint,
       gatewayToken: raw.opencodeGatewayToken,
+      apiUrl: raw.opencodeApiUrl,
+      apiKey: raw.opencodeApiKey,
+      mediaModels: raw.opencodeMediaModels,
+      maxAudioBytes: raw.opencodeMaxAudioBytes,
+      maxOutputTokens: raw.opencodeMaxOutputTokens,
+      catalogUrl: raw.opencodeCatalogUrl,
+      catalogTtlMs: raw.opencodeCatalogTtlMs,
       timeoutMs: raw.opencodeTimeoutMs,
       envPassthrough:
         raw.opencodeEnvPassthrough.length > 0

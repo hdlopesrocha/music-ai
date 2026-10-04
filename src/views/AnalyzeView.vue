@@ -8,15 +8,42 @@ import { formatBytes, formatDuration, truncate } from '@/utils/format'
 import { SUPPORTED_EXTENSIONS } from '@/services/music/metadata'
 import { isGitHubPagesHost, resolveApiBaseUrl } from '@/services/runtimeConfig'
 
-const { state, stages, selectFile, startAnalysis, resetAnalysis } = useAnalysis()
+const {
+  state,
+  stages,
+  selectFile,
+  startAnalysis,
+  resetAnalysis,
+  loadAnalysisOptions,
+  setSelectedModel,
+  setContextExamples,
+} = useAnalysis()
 const router = useRouter()
 
 const apiConfigured = ref(true)
+
+const contextChoices = computed(() => {
+  const limits = state.analysisOptions?.contextExamples
+  if (!limits) return []
+  const values = new Set<number>([0, 4, 8, limits.default, limits.max])
+  return [...values].filter((value) => value > 0 && value <= limits.max).sort((a, b) => a - b)
+})
+
+function onModelChange(event: Event): void {
+  const value = (event.target as HTMLSelectElement).value
+  setSelectedModel(value.length > 0 ? value : null)
+}
+
+function onContextChange(event: Event): void {
+  const value = (event.target as HTMLSelectElement).value
+  setContextExamples(value.length > 0 ? Number.parseInt(value, 10) : null)
+}
 
 onMounted(async () => {
   if (isGitHubPagesHost()) {
     apiConfigured.value = (await resolveApiBaseUrl()).length > 0
   }
+  await loadAnalysisOptions()
 })
 
 const shortHash = computed(() =>
@@ -106,6 +133,48 @@ function analyzeAgain(): void {
           <dt>SHA-256</dt>
           <dd class="mono">{{ shortHash }}</dd>
         </dl>
+
+        <div v-if="state.analysisOptions" class="analysis-settings">
+          <label class="field">
+            <span class="field__label">Model</span>
+            <select
+              v-if="state.analysisOptions.allowOverride && state.analysisOptions.models.length > 0"
+              class="select"
+              :value="state.selectedModel ?? ''"
+              @change="onModelChange"
+            >
+              <option value="">Server default ({{ state.analysisOptions.defaultModel }})</option>
+              <option
+                v-for="model in state.analysisOptions.models"
+                :key="model.id"
+                :value="model.id"
+              >
+                {{ model.label }}{{ model.id !== model.label ? ` (${model.id})` : '' }}
+              </option>
+            </select>
+            <span v-else class="faint">{{ state.analysisOptions.defaultModel }}</span>
+          </label>
+          <label class="field">
+            <span class="field__label">Context size</span>
+            <select
+              class="select"
+              :value="state.contextExamples === null ? '' : String(state.contextExamples)"
+              @change="onContextChange"
+            >
+              <option value="">
+                Default ({{ state.analysisOptions.contextExamples.default }} examples)
+              </option>
+              <option value="0">No examples (fastest)</option>
+              <option v-for="count in contextChoices" :key="count" :value="String(count)">
+                {{ count }} examples
+              </option>
+            </select>
+          </label>
+          <p class="faint analysis-settings__note">
+            Only models that support audio analysis are listed. Context size controls how many
+            existing classifications are sent to the model as examples.
+          </p>
+        </div>
 
         <div v-if="state.status === 'ready' || state.status === 'error'" class="selected__actions">
           <button
@@ -197,6 +266,21 @@ function analyzeAgain(): void {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
+}
+
+.analysis-settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.85rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-soft);
+}
+
+.analysis-settings__note {
+  grid-column: 1 / -1;
+  margin: 0;
 }
 
 .privacy {

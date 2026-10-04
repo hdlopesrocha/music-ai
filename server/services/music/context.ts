@@ -17,6 +17,8 @@ export function selectContextExamples(
   tracks: readonly Track[],
   options: ContextSelectionOptions,
 ): MusicExample[] {
+  if (options.maxTotal <= 0) return []
+
   const groups = new Map<string, Track[]>()
 
   for (const track of tracks) {

@@ -19,7 +19,9 @@ services:
       - key: SERVE_STATIC
         value: 'true'
       - key: OPENCODE_MODE
-        value: cli
+        value: api
+      - key: OPENCODE_MODEL
+        value: mimo-v2.6-flash
       - key: MAX_CONCURRENT_ANALYSES
         value: '1'
       - key: GITHUB_MODE
@@ -34,7 +36,7 @@ services:
         sync: false
       - key: GITHUB_APP_PRIVATE_KEY
         sync: false
-      - key: ANTHROPIC_API_KEY
+      - key: OPENCODE_API_KEY
         sync: false
       - key: SONG_LOOKUP_ENABLED
         value: 'true'

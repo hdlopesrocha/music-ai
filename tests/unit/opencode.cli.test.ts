@@ -51,8 +51,22 @@ describe('buildCliInvocation', () => {
     expect(invocation.args).toContain('json')
     expect(invocation.args).toContain('--file')
     expect(invocation.args).toContain('/tmp/work/a.mp3')
-    expect(invocation.args[invocation.args.length - 1]).toBe('PROMPT')
+    expect(invocation.args[invocation.args.length - 1]).toBe('/tmp/work/a.mp3')
+    // The message must come before --file, otherwise yargs treats it as a filename.
+    expect(invocation.args.indexOf('PROMPT')).toBeLessThan(invocation.args.indexOf('--file'))
     expect(invocation.cwd).toBe('/tmp/work')
+  })
+
+  it('honours a per-request model override', () => {
+    const invocation = buildCliInvocation(
+      config,
+      makeAudioInput({ filePath: '/tmp/work/a.mp3' }),
+      'PROMPT',
+      'opencode-go/mimo-v2.6-flash',
+    )
+    expect(invocation.args[invocation.args.indexOf('--model') + 1]).toBe(
+      'opencode-go/mimo-v2.6-flash',
+    )
   })
 
   it('only passes allowlisted environment variables to the child', () => {

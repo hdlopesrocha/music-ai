@@ -1,21 +1,59 @@
 import type { AppConfig } from '../config.js'
-import { jsonResponse, type ApiRequest, type ApiResponse } from '../http/types.js'
+import { ApiError } from '../errors.js'
+import { getHeader, jsonResponse, type ApiRequest, type ApiResponse } from '../http/types.js'
 import type { Logger } from '../logger.js'
 import type { Track } from '../services/music/database.js'
+import type { ModelCatalog } from '../services/opencode/modelCatalog.js'
 import type { MusicAnalysisResult } from '../services/opencode/types.js'
 import type {
+  AnalysisOptions,
   AnalyzeOutcome,
   MusicSubmissionWorkflow,
   SubmitOutcome,
 } from '../services/workflow/submitMusic.js'
 import { createFeedbackToken } from '../utils/hash.js'
+import { truncate } from '../utils/text.js'
 import { prepareSubmission } from './upload.js'
 
 export interface SubmissionHandlerDependencies {
   readonly config: AppConfig
   readonly workflow: MusicSubmissionWorkflow
+  readonly modelCatalog: ModelCatalog
   readonly logger: Logger
   readonly requestId: string
+}
+
+/**
+ * Reads optional per-request analysis settings from headers. The model must be
+ * present in the media-capable catalog; the context size is clamped so an
+ * anonymous caller can never inflate prompts beyond the configured maximum.
+ */
+async function resolveAnalysisOptions(
+  req: ApiRequest,
+  deps: SubmissionHandlerDependencies,
+): Promise<AnalysisOptions> {
+  const options: { model?: string; contextExamples?: number } = {}
+
+  const modelHeader = getHeader(req, 'x-analysis-model')?.trim()
+  if (modelHeader && modelHeader.length > 0) {
+    if (!(await deps.modelCatalog.isAllowed(modelHeader))) {
+      throw ApiError.badRequest(
+        `Model "${truncate(modelHeader, 80)}" is not available for media analysis`,
+      )
+    }
+    options.model = modelHeader
+  }
+
+  const contextHeader = getHeader(req, 'x-context-examples')?.trim()
+  if (contextHeader && contextHeader.length > 0) {
+    const parsed = Number.parseInt(contextHeader, 10)
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      throw ApiError.badRequest('x-context-examples must be a non-negative integer')
+    }
+    options.contextExamples = Math.min(parsed, deps.config.maxContextExamples)
+  }
+
+  return options
 }
 
 function publicClassification(classification: MusicAnalysisResult): Record<string, unknown> {
@@ -66,9 +104,11 @@ export async function handleAnalyze(
 ): Promise<ApiResponse> {
   const prepared = await prepareSubmission(req, deps.config)
   try {
+    const options = await resolveAnalysisOptions(req, deps)
     const outcome = await deps.workflow.analyze({
       input: prepared.input,
       requestId: deps.requestId,
+      options,
     })
 
     if (outcome.status === 'existing') {
@@ -102,9 +142,11 @@ export async function handleSubmit(
 ): Promise<ApiResponse> {
   const prepared = await prepareSubmission(req, deps.config)
   try {
+    const options = await resolveAnalysisOptions(req, deps)
     const outcome: SubmitOutcome = await deps.workflow.submit({
       input: prepared.input,
       requestId: deps.requestId,
+      options,
     })
 
     if (outcome.status === 'unknown_style' || outcome.status === 'low_confidence') {

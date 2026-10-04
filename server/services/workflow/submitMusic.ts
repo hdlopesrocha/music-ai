@@ -42,9 +42,17 @@ export interface WorkflowDependencies {
   readonly sleep?: (ms: number) => Promise<void>
 }
 
+export interface AnalysisOptions {
+  /** Per-request model override, already validated by the API layer. */
+  readonly model?: string
+  /** Number of database examples sent as context; clamped to the configured maximum. */
+  readonly contextExamples?: number
+}
+
 export interface AnalyzeInput {
   readonly input: AudioAnalysisInput
   readonly requestId: string
+  readonly options?: AnalysisOptions
 }
 
 export type AnalyzeOutcome =
@@ -116,11 +124,11 @@ export class MusicSubmissionWorkflow {
     this.sleep = dependencies.sleep ?? defaultSleep
   }
 
-  async analyze({ input, requestId }: AnalyzeInput): Promise<AnalyzeOutcome> {
+  async analyze({ input, requestId, options }: AnalyzeInput): Promise<AnalyzeOutcome> {
     const stylesFile = await this.databaseSource.readStyles()
     const catalog = createStyleCatalog(stylesFile.value.styles)
     const musicFile = await this.databaseSource.readMusic()
-    return this.analyzeAgainst(input, catalog, musicFile.value, requestId)
+    return this.analyzeAgainst(input, catalog, musicFile.value, requestId, options)
   }
 
   async submit(input: AnalyzeInput): Promise<SubmitOutcome> {
@@ -161,6 +169,7 @@ export class MusicSubmissionWorkflow {
     catalog: StyleCatalog,
     database: MusicDatabase,
     requestId: string,
+    options: AnalysisOptions = {},
   ): Promise<AnalyzeOutcome> {
     const existing = findTrackById(database, input.sha256)
     if (existing) {
@@ -171,8 +180,15 @@ export class MusicSubmissionWorkflow {
       return { status: 'existing', track: existing }
     }
 
+    const contextTotal = Math.max(
+      0,
+      Math.min(
+        options.contextExamples ?? this.config.maxContextExamples,
+        this.config.maxContextExamples,
+      ),
+    )
     const examples = selectContextExamples(database.tracks, {
-      maxTotal: this.config.maxContextExamples,
+      maxTotal: contextTotal,
       perStyle: this.config.maxContextExamplesPerStyle,
     })
 
@@ -181,10 +197,12 @@ export class MusicSubmissionWorkflow {
       allowedStyles: catalog.styles,
       examples,
       minConfidence: this.config.minStyleConfidence,
+      ...(options.model ? { model: options.model } : {}),
     })
     this.logger.info('analysis completed', {
       requestId,
       engine: this.agent.name,
+      model: options.model ?? this.config.opencode.model,
       durationMs: this.now().getTime() - startedAt,
       style: result.style,
       confidence: result.confidence,

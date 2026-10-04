@@ -6,6 +6,7 @@ import type { ApiRequest, ApiResponse } from '../../server/http/types.js'
 import { SlidingWindowRateLimiter } from '../../server/rateLimit.js'
 import { GitHubDatabaseSource } from '../../server/services/database/source.js'
 import { parseMusicDatabase, serializeMusicDatabase } from '../../server/services/music/database.js'
+import type { ModelCatalog } from '../../server/services/opencode/modelCatalog.js'
 import type { MusicAnalysisAgent } from '../../server/services/opencode/types.js'
 import { NoopSongIdentificationService } from '../../server/services/song/types.js'
 import { FeedbackWorkflow } from '../../server/services/workflow/submitFeedback.js'
@@ -13,7 +14,9 @@ import { MusicSubmissionWorkflow } from '../../server/services/workflow/submitMu
 import { fakeFlac, fakeMp3 } from '../helpers/audio.js'
 import {
   FakeGitHubClient,
+  FakeModelCatalog,
   FakeMusicAnalysisAgent,
+  makeTrack,
   silentLogger,
   testConfig,
 } from '../helpers/fakes.js'
@@ -21,6 +24,7 @@ import {
 interface HarnessOptions {
   env?: Record<string, string>
   agent?: MusicAnalysisAgent
+  modelCatalog?: ModelCatalog
   seedMusic?: boolean
   clock?: () => number
 }
@@ -64,10 +68,12 @@ function createHarness(options: HarnessOptions = {}) {
     ...(options.clock ? { clock: options.clock } : {}),
   })
 
+  const modelCatalog = options.modelCatalog ?? new FakeModelCatalog([], config.opencode.model)
   const app = createApp({
     config,
     workflow,
     feedbackWorkflow,
+    modelCatalog,
     rateLimiter,
     semaphore: new Semaphore(2),
     logger,
@@ -417,6 +423,74 @@ describe('CORS', () => {
       submissionRequest({ headers: { origin: 'https://evil.example' } }),
     )
     expect(response.headers['access-control-allow-origin']).toBeUndefined()
+  })
+})
+
+describe('analysis options', () => {
+  const mediaModel = { id: 'mimo-v2.6-flash', label: 'MiMo V2.6 Flash', media: ['audio'] }
+
+  it('exposes media-capable models and context bounds', async () => {
+    const { app } = createHarness({
+      modelCatalog: new FakeModelCatalog([mediaModel], 'mimo-v2.6-pro'),
+    })
+    const response = await app.handle({
+      method: 'GET',
+      path: '/api/opencode/models',
+      query: {},
+      headers: {},
+      body: Buffer.alloc(0),
+    })
+    expect(response.status).toBe(200)
+    const body = bodyOf(response)
+    expect(body.defaultModel).toBe('mimo-v2.6-pro')
+    expect(body.allowOverride).toBe(true)
+    expect(body.models).toHaveLength(1)
+    expect((body.contextExamples as Record<string, number>).max).toBeGreaterThan(0)
+  })
+
+  it('applies an allowed model override and clamps the context size', async () => {
+    const agent = new FakeMusicAnalysisAgent()
+    const { app, github, config } = createHarness({
+      agent,
+      env: { MAX_CONTEXT_EXAMPLES: '3' },
+      modelCatalog: new FakeModelCatalog([mediaModel], 'mimo-v2.6-pro'),
+      seedMusic: false,
+    })
+    const tracks = Array.from({ length: 6 }, (_, index) =>
+      makeTrack({
+        id: `${index}`.repeat(64).slice(0, 64),
+        style: index % 2 === 0 ? 'Electronic' : 'Techno',
+      }),
+    )
+    github.seedBaseFile(config.musicDatabasePath, serializeMusicDatabase({ version: 1, tracks }))
+
+    const response = await app.handle(
+      submissionRequest({
+        headers: { 'x-analysis-model': 'mimo-v2.6-flash', 'x-context-examples': '99' },
+      }),
+    )
+    expect(response.status).toBe(201)
+    expect(agent.lastContext?.model).toBe('mimo-v2.6-flash')
+    expect(agent.lastContext?.examples.length).toBe(3)
+  })
+
+  it('rejects models outside the media catalog', async () => {
+    const { app } = createHarness({
+      modelCatalog: new FakeModelCatalog([mediaModel], 'mimo-v2.6-pro'),
+    })
+    const response = await app.handle(
+      submissionRequest({ headers: { 'x-analysis-model': 'expensive-text-model' } }),
+    )
+    expect(response.status).toBe(400)
+    expect(bodyOf(response).reason).toBe('BAD_REQUEST')
+  })
+
+  it('rejects malformed context sizes', async () => {
+    const { app } = createHarness()
+    const response = await app.handle(
+      submissionRequest({ headers: { 'x-context-examples': 'lots' } }),
+    )
+    expect(response.status).toBe(400)
   })
 })
 

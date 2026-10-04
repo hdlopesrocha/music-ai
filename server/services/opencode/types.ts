@@ -22,6 +22,8 @@ export interface MusicAnalysisContext {
   readonly allowedStyles: readonly string[]
   readonly examples: readonly MusicExample[]
   readonly minConfidence: number
+  /** Optional per-request model override, already validated against the catalog. */
+  readonly model?: string
 }
 
 export interface SongProposal {
@@ -63,5 +65,10 @@ export interface MusicAnalysisAgent {
 
 export interface OpenCodeTransport {
   readonly name: string
-  run(params: { input: AudioAnalysisInput; systemPrompt: string; prompt: string }): Promise<string>
+  run(params: {
+    input: AudioAnalysisInput
+    systemPrompt: string
+    prompt: string
+    model?: string
+  }): Promise<string>
 }

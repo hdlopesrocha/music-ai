@@ -1,5 +1,11 @@
 import { computed, reactive } from 'vue'
-import { ApiRequestError, submitMusic, type SubmissionResponse } from '@/services/api'
+import {
+  ApiRequestError,
+  fetchAnalysisOptions,
+  submitMusic,
+  type AnalysisOptionsResponse,
+  type SubmissionResponse,
+} from '@/services/api'
 import {
   isSupportedAudioFile,
   readClientMetadata,
@@ -27,6 +33,25 @@ export const ANALYSIS_STAGES: readonly AnalysisStage[] = [
 
 const STAGE_TICK_MS = 1400
 const STORAGE_KEY = 'ai-music-db:last-session'
+const MODEL_STORAGE_KEY = 'ai-music-db:model'
+const CONTEXT_STORAGE_KEY = 'ai-music-db:context-examples'
+
+function readStored(key: string): string | null {
+  try {
+    return window.localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+function writeStored(key: string, value: string | null): void {
+  try {
+    if (value === null) window.localStorage.removeItem(key)
+    else window.localStorage.setItem(key, value)
+  } catch {
+    // storage may be unavailable (private mode); selection still works in memory
+  }
+}
 
 export interface PersistedSession {
   response: SubmissionResponse
@@ -44,6 +69,9 @@ interface AnalysisState {
   stageIndex: number
   response: SubmissionResponse | null
   errorMessage: string | null
+  analysisOptions: AnalysisOptionsResponse | null
+  selectedModel: string | null
+  contextExamples: number | null
 }
 
 const state = reactive<AnalysisState>({
@@ -54,6 +82,9 @@ const state = reactive<AnalysisState>({
   stageIndex: 0,
   response: null,
   errorMessage: null,
+  analysisOptions: null,
+  selectedModel: readStored(MODEL_STORAGE_KEY),
+  contextExamples: null,
 })
 
 let ticker: number | null = null
@@ -160,7 +191,10 @@ export async function startAnalysis(): Promise<void> {
   startTicker()
 
   try {
-    const response = await submitMusic(file)
+    const response = await submitMusic(file, {
+      ...(state.selectedModel ? { model: state.selectedModel } : {}),
+      ...(state.contextExamples !== null ? { contextExamples: state.contextExamples } : {}),
+    })
     stopTicker()
     state.response = response
 
@@ -182,6 +216,42 @@ export async function startAnalysis(): Promise<void> {
   } finally {
     persistSession()
   }
+}
+
+export async function loadAnalysisOptions(): Promise<void> {
+  const options = await fetchAnalysisOptions()
+  if (!options) return
+  state.analysisOptions = options
+
+  const storedModel = readStored(MODEL_STORAGE_KEY)
+  if (
+    storedModel &&
+    options.allowOverride &&
+    options.models.some((model) => model.id === storedModel)
+  ) {
+    state.selectedModel = storedModel
+  } else if (storedModel && !options.allowOverride) {
+    state.selectedModel = null
+  }
+
+  const storedContext = Number.parseInt(readStored(CONTEXT_STORAGE_KEY) ?? '', 10)
+  if (
+    Number.isFinite(storedContext) &&
+    storedContext >= 0 &&
+    storedContext <= options.contextExamples.max
+  ) {
+    state.contextExamples = storedContext
+  }
+}
+
+export function setSelectedModel(model: string | null): void {
+  state.selectedModel = model
+  writeStored(MODEL_STORAGE_KEY, model)
+}
+
+export function setContextExamples(count: number | null): void {
+  state.contextExamples = count
+  writeStored(CONTEXT_STORAGE_KEY, count === null ? null : String(count))
 }
 
 export function resetAnalysis(): void {
@@ -219,5 +289,8 @@ export function useAnalysis() {
     resetAnalysis,
     loadPersistedSession,
     clearPersistedSession,
+    loadAnalysisOptions,
+    setSelectedModel,
+    setContextExamples,
   }
 }

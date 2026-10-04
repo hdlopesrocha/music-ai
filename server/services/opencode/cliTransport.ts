@@ -44,20 +44,23 @@ export function buildCliInvocation(
   config: OpenCodeConfig,
   input: AudioAnalysisInput,
   prompt: string,
+  model?: string,
 ): CliInvocation {
+  // `--file` is an array option and would swallow a trailing positional, so the
+  // prompt must come before it.
   const args = [
     'run',
     '--model',
-    config.model,
+    model ?? config.model,
     '--agent',
     config.agent,
     '--format',
     'json',
     '--dir',
     dirname(input.filePath),
+    prompt,
     '--file',
     input.filePath,
-    prompt,
   ]
 
   const env: NodeJS.ProcessEnv = {}
@@ -158,9 +161,10 @@ export class CliOpenCodeTransport implements OpenCodeTransport {
     input: AudioAnalysisInput
     systemPrompt: string
     prompt: string
+    model?: string
   }): Promise<string> {
     await this.materializeAgent(dirname(params.input.filePath))
-    const invocation = buildCliInvocation(this.config, params.input, params.prompt)
+    const invocation = buildCliInvocation(this.config, params.input, params.prompt, params.model)
 
     let result: CliProcessResult
     try {

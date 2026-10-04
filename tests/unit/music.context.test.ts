@@ -7,6 +7,11 @@ describe('selectContextExamples', () => {
     expect(selectContextExamples([], { maxTotal: 10, perStyle: 2 })).toEqual([])
   })
 
+  it('returns no examples when the context size is zero', () => {
+    const tracks = [makeTrack({ id: 'a'.repeat(64) })]
+    expect(selectContextExamples(tracks, { maxTotal: 0, perStyle: 2 })).toEqual([])
+  })
+
   it('keeps the most recent entries per style and respects maxTotal', () => {
     const tracks = [
       makeTrack({ id: 'a'.repeat(64), style: 'Rock', detectedAt: '2024-01-01T00:00:00Z' }),

@@ -10,6 +10,11 @@ import type {
   MusicAnalysisResult,
 } from '../../server/services/opencode/types.js'
 import type {
+  MediaModelInfo,
+  ModelCatalog,
+  ModelCatalogInfo,
+} from '../../server/services/opencode/modelCatalog.js'
+import type {
   CreatePullRequestParams,
   GitHubRepositoryClient,
   IssueComment,
@@ -53,11 +58,16 @@ export function testConfig(env: Record<string, string> = {}): AppConfig {
 export class FakeMusicAnalysisAgent implements MusicAnalysisAgent {
   readonly name = 'fake'
   calls = 0
+  lastContext: import('../../server/services/opencode/types.js').MusicAnalysisContext | null = null
 
   constructor(private readonly result: Partial<MusicAnalysisResult> = {}) {}
 
-  async analyze(): Promise<MusicAnalysisResult> {
+  async analyze(
+    _input: AudioAnalysisInput,
+    context: import('../../server/services/opencode/types.js').MusicAnalysisContext,
+  ): Promise<MusicAnalysisResult> {
     this.calls += 1
+    this.lastContext = context
     return {
       style: 'Electronic',
       confidence: 0.94,
@@ -66,6 +76,26 @@ export class FakeMusicAnalysisAgent implements MusicAnalysisAgent {
       instrumental: true,
       ...this.result,
     }
+  }
+}
+
+export class FakeModelCatalog implements ModelCatalog {
+  constructor(
+    private readonly mediaModels: MediaModelInfo[] = [],
+    private readonly defaultModel = 'fake-model',
+  ) {}
+
+  async info(): Promise<ModelCatalogInfo> {
+    return {
+      models: this.mediaModels,
+      defaultModel: this.defaultModel,
+      allowOverride: this.mediaModels.length > 0,
+      source: this.mediaModels.length > 0 ? 'allowlist' : 'none',
+    }
+  }
+
+  async isAllowed(model: string): Promise<boolean> {
+    return this.mediaModels.some((entry) => entry.id === model)
   }
 }
 

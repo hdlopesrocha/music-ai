@@ -4,11 +4,8 @@
     {
       "id": "ba4c82cec5f7bb87c426811abea332beab83e317abf5995c2e5586c1d73b4f1f",
       "fileName": "real-commit.wav",
-      "style": "Techno",
-      "confidence": 0.75,
-      "detectedAt": "2026-10-04T16:31:41.109Z",
-      "source": "opencode",
       "duration": 8,
+      "style": "Techno",
       "substyles": [
         "Minimal Techno"
       ],
@@ -21,7 +18,10 @@
         "club",
         "synthetic"
       ],
+      "confidence": 0.75,
       "hasLyrics": false,
+      "detectedAt": "2026-10-04T16:31:41.109Z",
+      "source": "opencode",
       "diagnostics": {
         "bpm": 128,
         "duration": 8,
@@ -31,6 +31,41 @@
           "kick drum",
           "closed hi-hat",
           "electronic percussion"
+        ]
+      }
+    },
+    {
+      "id": "50a1435eb6c635ed99831b2a324fbc7fea7554dd8e2c84d74f6a5c011eabda66",
+      "fileName": "José González - Heartbeats (Lyric Video) [ik_BQYbbZ5U].mp3",
+      "style": "Folk",
+      "confidence": 0.92,
+      "detectedAt": "2026-10-04T16:43:42.764Z",
+      "source": "opencode",
+      "duration": 161,
+      "substyles": [
+        "Acoustic Folk",
+        "Indie Folk"
+      ],
+      "tags": [
+        "acoustic guitar",
+        "fingerpicking",
+        "intimate vocals",
+        "male vocalist",
+        "melancholic",
+        "minimal arrangement",
+        "singer-songwriter",
+        "warm production"
+      ],
+      "hasLyrics": true,
+      "lyricsLanguage": "English",
+      "diagnostics": {
+        "bpm": 82,
+        "duration": 161,
+        "key": "Eb major",
+        "energy": 0.35,
+        "instrumentation": [
+          "acoustic guitar",
+          "male vocals"
         ]
       }
     }

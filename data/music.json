@@ -1,0 +1,433 @@
+{
+  "version": 1,
+  "tracks": [
+    {
+      "id": "ba4c82cec5f7bb87c426811abea332beab83e317abf5995c2e5586c1d73b4f1f",
+      "fileName": "real-commit.wav",
+      "duration": 8,
+      "style": "Techno",
+      "substyles": [
+        "Minimal Techno"
+      ],
+      "tags": [
+        "four-on-the-floor",
+        "electronic drums",
+        "hi-hat",
+        "repetitive",
+        "minimal",
+        "club",
+        "synthetic"
+      ],
+      "confidence": 0.75,
+      "hasLyrics": false,
+      "detectedAt": "2026-10-04T16:31:41.109Z",
+      "source": "opencode",
+      "diagnostics": {
+        "bpm": 128,
+        "duration": 8,
+        "key": "C minor",
+        "energy": 0.55,
+        "instrumentation": [
+          "kick drum",
+          "closed hi-hat",
+          "electronic percussion"
+        ]
+      }
+    },
+    {
+      "id": "50a1435eb6c635ed99831b2a324fbc7fea7554dd8e2c84d74f6a5c011eabda66",
+      "fileName": "José González - Heartbeats (Lyric Video) [ik_BQYbbZ5U].mp3",
+      "title": "Heartbeats",
+      "artist": "José González",
+      "duration": 161,
+      "style": "Folk",
+      "substyles": [
+        "Acoustic Folk",
+        "Indie Folk",
+        "Singer-Songwriter"
+      ],
+      "tags": [
+        "acoustic guitar",
+        "fingerpicking",
+        "intimate vocals",
+        "male vocalist",
+        "minimal arrangement",
+        "melancholic",
+        "warm production",
+        "soft dynamics"
+      ],
+      "confidence": 0.93,
+      "hasLyrics": true,
+      "lyricsLanguage": "English",
+      "subtitles": [
+        {
+          "start": 27.4,
+          "end": 31.2,
+          "text": "One night to be confused"
+        },
+        {
+          "start": 31.4,
+          "end": 35.2,
+          "text": "One night to speed up truth"
+        },
+        {
+          "start": 35.4,
+          "end": 39.2,
+          "text": "We had a promise made"
+        },
+        {
+          "start": 39.4,
+          "end": 43.2,
+          "text": "Four hands and then away"
+        },
+        {
+          "start": 43.4,
+          "end": 47.2,
+          "text": "Both under influence"
+        },
+        {
+          "start": 47.4,
+          "end": 51,
+          "text": "We had divine sense"
+        },
+        {
+          "start": 51.2,
+          "end": 54.8,
+          "text": "To know what to say"
+        },
+        {
+          "start": 55,
+          "end": 59,
+          "text": "Mind is a razor blade"
+        },
+        {
+          "start": 60.4,
+          "end": 65.4,
+          "text": "To call for hands of above to lean on"
+        },
+        {
+          "start": 65.6,
+          "end": 71,
+          "text": "Wouldn't be good enough for me, no"
+        },
+        {
+          "start": 78.4,
+          "end": 82.4,
+          "text": "One night of magic rush"
+        },
+        {
+          "start": 82.6,
+          "end": 86.6,
+          "text": "The start a simple touch"
+        },
+        {
+          "start": 86.8,
+          "end": 90.8,
+          "text": "One night to push and scream"
+        },
+        {
+          "start": 91,
+          "end": 95,
+          "text": "And then relief"
+        },
+        {
+          "start": 95.2,
+          "end": 99.2,
+          "text": "Ten days of perfect tunes"
+        },
+        {
+          "start": 99.4,
+          "end": 103.4,
+          "text": "The colors red and blue"
+        },
+        {
+          "start": 103.6,
+          "end": 107.6,
+          "text": "We had a promise made"
+        },
+        {
+          "start": 107.8,
+          "end": 111.8,
+          "text": "We were in love"
+        },
+        {
+          "start": 113.4,
+          "end": 118.4,
+          "text": "To call for hands of above to lean on"
+        },
+        {
+          "start": 118.6,
+          "end": 123.6,
+          "text": "Wouldn't be good enough for me, no"
+        },
+        {
+          "start": 124.4,
+          "end": 129.4,
+          "text": "To call for hands of above to lean on"
+        },
+        {
+          "start": 129.6,
+          "end": 133.6,
+          "text": "Wouldn't be good enough for you"
+        },
+        {
+          "start": 140.4,
+          "end": 145.4,
+          "text": "You knew the hand of the devil"
+        },
+        {
+          "start": 149.4,
+          "end": 151.4,
+          "text": "And you"
+        }
+      ],
+      "detectedAt": "2026-10-04T18:08:08.578Z",
+      "source": "opencode",
+      "diagnostics": {
+        "bpm": 87,
+        "duration": 161,
+        "key": "Eb major",
+        "energy": 0.28,
+        "instrumentation": [
+          "acoustic guitar",
+          "fingerpicked arpeggios",
+          "male lead vocals"
+        ]
+      }
+    },
+    {
+      "id": "496710d70380c36c1f08ba6258b660b748acda68178f2d934f4844b6d48b24bf",
+      "fileName": "Moblack, Salif Keita & Cesária Evora - Yamore (Lyrics) [qZNYIaMGpF0].mp3",
+      "style": "House",
+      "confidence": 0.95,
+      "detectedAt": "2026-10-04T18:19:48.941Z",
+      "source": "opencode",
+      "title": "Yamore",
+      "artist": "MobiBlack, Salif Keita & Cesária Evora",
+      "duration": 248,
+      "substyles": [
+        "Deep House",
+        "Afro House",
+        "Tropical House"
+      ],
+      "tags": [
+        "four-on-the-floor",
+        "organic percussion",
+        "shaker",
+        "congas",
+        "warm bassline",
+        "male vocals",
+        "female vocals",
+        "multi-lingual",
+        "soulful",
+        "danceable"
+      ],
+      "hasLyrics": true,
+      "lyricsLanguage": "French",
+      "lyrics": "Ndjoué itou kassé\nN'tan pass\n\nM'ont dit fe\nSimou n'té fe\nNa n'bé namoï sé mi n'bi kou fi é\nN'wé ra majin\n\nNa ma fe\nNa ma fe nié nianalamo\nNa ma fe\nNé a ra nanou fo\nYi na nouan ko fi é\nNé o si la é kon ti lélé é dou con la\nHahaha\nTi lélé nianalamo\nYi na nouan ko fi é\n\nChéri n'djé bi fe é, n'paw\nJe t'aime mi amor mais n'djé bi fe é\nN'gou ma ti\n\nJe t'aime mi amor mais n'djé bi fe é\nN'gou ma ti\n\nN'gou ma ti\nN'gou ma ti\nN'gou ma ti",
+      "subtitles": [
+        {
+          "start": 0,
+          "end": 3.5,
+          "text": "Ndjoué itou kassé"
+        },
+        {
+          "start": 3.5,
+          "end": 6,
+          "text": "N'tan pass"
+        },
+        {
+          "start": 31,
+          "end": 34.5,
+          "text": "M'ont dit fe"
+        },
+        {
+          "start": 34.5,
+          "end": 38,
+          "text": "Simou n'té fe"
+        },
+        {
+          "start": 38,
+          "end": 43,
+          "text": "Na n'bé namoï sé mi n'bi kou fi é"
+        },
+        {
+          "start": 43,
+          "end": 47,
+          "text": "N'wé ra majin"
+        },
+        {
+          "start": 62,
+          "end": 65,
+          "text": "Na ma fe"
+        },
+        {
+          "start": 65.5,
+          "end": 69,
+          "text": "Na ma fe nié nianalamo"
+        },
+        {
+          "start": 69.5,
+          "end": 72,
+          "text": "Na ma fe"
+        },
+        {
+          "start": 72,
+          "end": 75.5,
+          "text": "Né a ra nanou fo"
+        },
+        {
+          "start": 75.5,
+          "end": 79.5,
+          "text": "Yi na nouan ko fi é"
+        },
+        {
+          "start": 79.5,
+          "end": 85.5,
+          "text": "Né o si la é kon ti lélé é dou con la"
+        },
+        {
+          "start": 85.5,
+          "end": 88,
+          "text": "Hahaha"
+        },
+        {
+          "start": 88,
+          "end": 91.5,
+          "text": "Ti lélé nianalamo"
+        },
+        {
+          "start": 91.5,
+          "end": 95.5,
+          "text": "Yi na nouan ko fi é"
+        },
+        {
+          "start": 132,
+          "end": 136.5,
+          "text": "Chéri n'djé bi fe é, n'paw"
+        },
+        {
+          "start": 136.5,
+          "end": 144,
+          "text": "Je t'aime mi amor mais n'djé bi fe é"
+        },
+        {
+          "start": 144,
+          "end": 150.5,
+          "text": "N'gou ma ti"
+        },
+        {
+          "start": 150.5,
+          "end": 158.5,
+          "text": "Je t'aime mi amor mais n'djé bi fe é"
+        },
+        {
+          "start": 158.5,
+          "end": 165,
+          "text": "N'gou ma ti"
+        },
+        {
+          "start": 165,
+          "end": 171.5,
+          "text": "N'gou ma ti"
+        },
+        {
+          "start": 171.5,
+          "end": 178,
+          "text": "N'gou ma ti"
+        },
+        {
+          "start": 178,
+          "end": 184.5,
+          "text": "N'gou ma ti"
+        }
+      ],
+      "diagnostics": {
+        "bpm": 122,
+        "duration": 248,
+        "key": "A minor",
+        "energy": 0.72,
+        "instrumentation": [
+          "drum machine",
+          "shaker",
+          "congas",
+          "warm synth bass",
+          "organ pads",
+          "male vocals",
+          "female vocals",
+          "vocal chants"
+        ]
+      }
+    },
+    {
+      "id": "ea35c904afb216f3afd765c01978758b2294188c2cd43b6c415b71e4ac8887f9",
+      "fileName": "if-i-loved-you-1945.mp3",
+      "title": "If I Loved You",
+      "artist": "Larry Clinton's Orchestra;The Toon Timers;Hammerstein II and Richard Rodgers",
+      "album": "If I Loved You",
+      "duration": 197,
+      "style": "Jazz",
+      "substyles": [
+        "Big Band",
+        "Swing",
+        "Traditional Pop",
+        "Show Tune",
+        "Crooner Ballad"
+      ],
+      "tags": [
+        "big band orchestra",
+        "brass section",
+        "saxophones",
+        "strings",
+        "brush drums",
+        "vintage recording",
+        "surface noise",
+        "crooner vocals",
+        "ballad tempo",
+        "show tune"
+      ],
+      "confidence": 0.9,
+      "hasLyrics": true,
+      "lyricsLanguage": "English",
+      "lyrics": "Oh, I'd love you\ntime and again I would try to say\nall I want you to know\nIf I loved you",
+      "subtitles": [
+        {
+          "start": 146.5,
+          "end": 153.5,
+          "text": "Oh, I'd love you"
+        },
+        {
+          "start": 154,
+          "end": 161.5,
+          "text": "time and again I would try to say"
+        },
+        {
+          "start": 162,
+          "end": 170,
+          "text": "all I want you to know"
+        },
+        {
+          "start": 175,
+          "end": 182,
+          "text": "If I loved you"
+        }
+      ],
+      "detectedAt": "2026-10-04T18:15:12.106Z",
+      "source": "opencode",
+      "diagnostics": {
+        "bpm": 72,
+        "duration": 197,
+        "key": "unknown",
+        "energy": 0.35,
+        "instrumentation": [
+          "brass section",
+          "saxophones",
+          "strings",
+          "acoustic bass",
+          "brush drums",
+          "male vocals"
+        ]
+      }
+    }
+  ]
+}

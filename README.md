@@ -548,7 +548,7 @@ Frontend variables (bundled by Vite, safe to expose):
 | Variable | Default | Description |
 | --- | --- | --- |
 | `VITE_BASE_PATH` | `/` | Base path for GitHub Pages project sites |
-| `VITE_API_BASE_URL` | `` | Submission API origin; empty = same origin |
+| `VITE_API_BASE_URL` | `` | Build-time Submission API origin (overrides `config.json`) |
 | `VITE_REPOSITORY_URL` | `` | Public repo URL used for links |
 
 Server variables (never exposed to the browser):
@@ -591,16 +591,25 @@ startup; invalid values fail fast with a descriptive error.
 
 ## GitHub Pages deployment
 
-1. Enable **Settings -> Pages -> Source: GitHub Actions** in the repository.
-2. Set the repository variable `VITE_API_BASE_URL` to the deployed API origin.
+1. Enable **Settings -> Pages -> Source: Deploy from a branch -> `gh-pages` / (root)**.
+2. Point the frontend at your Submission API, either:
+   - **Runtime (recommended):** edit `apiBaseUrl` in `public/config.json` before building, or
+     directly in the `config.json` of the `gh-pages` branch for an instant change without a
+     rebuild, or
+   - **Build-time:** set the repository variable `VITE_API_BASE_URL` to the deployed API origin
+     (it takes precedence over `config.json`).
 3. Push to `main`. The workflow `.github/workflows/deploy.yml`:
    - installs dependencies,
    - runs `npm run validate:data`, lint, typecheck and tests,
    - builds with `VITE_BASE_PATH=/<repository>/`,
-   - uploads and deploys `dist/` to GitHub Pages.
+   - publishes `dist/` to the `gh-pages` branch, which GitHub Pages serves.
 
 The app uses `createWebHashHistory()`, so every route (`#/`, `#/analyze`, `#/database`,
 `#/styles`, `#/result`) works on refresh without server rewrites.
+
+If no API is configured, the Analyze page explains that submissions are disabled on that
+deployment instead of sending a request that GitHub Pages would reject with `405`. Browsing
+the database and styles keeps working.
 
 After a maintainer merges a classification PR, the workflow reruns and the new track appears
 in the public database automatically.

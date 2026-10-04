@@ -1,6 +1,10 @@
 import type { Classification, PullRequestRef, Track, VerifiedSong } from '@/models/music'
+import { isGitHubPagesHost, resolveApiBaseUrl } from '@/services/runtimeConfig'
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/+$/, '')
+const API_NOT_CONFIGURED_MESSAGE =
+  'This deployment has no Submission API configured, so analysis is disabled here. ' +
+  'A maintainer must deploy the API and set its URL in config.json. ' +
+  'See the README for deployment instructions.'
 
 export interface SubmissionResponse {
   success: boolean
@@ -89,8 +93,19 @@ async function parseResponse(response: Response): Promise<SubmissionResponse> {
   return payload as unknown as SubmissionResponse
 }
 
+async function resolveUrl(path: string): Promise<string> {
+  const base = await resolveApiBaseUrl()
+  if (base.length > 0) return `${base}${path}`
+  // Same-origin is legitimate for dev (Vite proxy) and self-hosted deployments,
+  // but impossible on GitHub Pages, where POST would return a confusing 405.
+  if (isGitHubPagesHost()) {
+    throw new ApiRequestError(API_NOT_CONFIGURED_MESSAGE, 0, 'API_NOT_CONFIGURED')
+  }
+  return path
+}
+
 async function postAudio(path: string, file: File): Promise<SubmissionResponse> {
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await fetch(await resolveUrl(path), {
     method: 'POST',
     headers: buildHeaders(file),
     body: file,
@@ -109,7 +124,7 @@ export function analyzeMusic(file: File): Promise<SubmissionResponse> {
 }
 
 export async function sendFeedback(request: FeedbackRequest): Promise<FeedbackResponse> {
-  const response = await fetch(`${API_BASE}/api/feedback`, {
+  const response = await fetch(await resolveUrl('/api/feedback'), {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(request),

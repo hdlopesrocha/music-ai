@@ -1,14 +1,23 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import AnalysisProgress from '@/components/AnalysisProgress.vue'
 import FilePicker from '@/components/FilePicker.vue'
 import { useAnalysis } from '@/composables/useAnalysis'
 import { formatBytes, formatDuration, truncate } from '@/utils/format'
 import { SUPPORTED_EXTENSIONS } from '@/services/music/metadata'
+import { isGitHubPagesHost, resolveApiBaseUrl } from '@/services/runtimeConfig'
 
 const { state, stages, selectFile, startAnalysis, resetAnalysis } = useAnalysis()
 const router = useRouter()
+
+const apiConfigured = ref(true)
+
+onMounted(async () => {
+  if (isGitHubPagesHost()) {
+    apiConfigured.value = (await resolveApiBaseUrl()).length > 0
+  }
+})
 
 const shortHash = computed(() =>
   state.sha256 ? `${state.sha256.slice(0, 20)}...` : 'computing...',
@@ -49,6 +58,15 @@ function analyzeAgain(): void {
         validated before a public Pull Request is opened.
       </p>
     </header>
+
+    <section v-if="!apiConfigured" class="banner banner--warning">
+      <strong class="banner__title">Submissions are disabled on this deployment</strong>
+      <span class="muted">
+        No Submission API is configured yet, and GitHub Pages cannot process uploads by itself. You
+        can still browse the public database and styles. A maintainer can enable submissions by
+        deploying the API and putting its URL in <code>config.json</code>.
+      </span>
+    </section>
 
     <FilePicker v-if="showPicker" @file="onFileSelected" />
 

@@ -40,6 +40,8 @@ function createClient(handler: (request: RecordedRequest) => Response) {
       appId: 42,
       privateKey,
       apiUrl: 'https://api.github.test',
+      commitName: 'Test Bot',
+      commitEmail: 'bot@example.com',
     },
     logger: silentLogger(),
     fetchFn,

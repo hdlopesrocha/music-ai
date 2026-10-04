@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises'
 import { extname } from 'node:path'
 import type { OpenCodeConfig } from '../../config.js'
 import { OpenCodeError } from '../../errors.js'
+import { trimAudioForAnalysis } from '../music/trim.js'
 import { isRecord, truncate } from '../../utils/text.js'
 import type { AudioAnalysisInput, OpenCodeTransport } from './types.js'
 
@@ -92,12 +93,20 @@ export class OpenCodeApiTransport implements OpenCodeTransport {
       )
     }
 
-    const audio = await readFile(params.input.filePath)
+    const fileAudio = await readFile(params.input.filePath)
+    // Long tracks are expensive and slow to analyse; send only the configured
+    // excerpt (WAV trimmed frame-accurately, MP3 proportionally by duration).
+    const audio = trimAudioForAnalysis(
+      fileAudio,
+      params.input.fileName,
+      params.input.metadata.duration,
+      config.maxAudioSeconds,
+    )
     if (audio.length > config.maxAudioBytes) {
       throw new OpenCodeError(
         'EXECUTION_FAILED',
         `The audio exceeds the direct-API limit of ${config.maxAudioBytes} bytes. ` +
-          'Use a shorter excerpt or raise OPENCODE_MAX_AUDIO_BYTES.',
+          'Lower OPENCODE_MAX_AUDIO_SECONDS, use a shorter excerpt or raise OPENCODE_MAX_AUDIO_BYTES.',
       )
     }
 

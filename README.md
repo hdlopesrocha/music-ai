@@ -609,7 +609,7 @@ Server variables (never exposed to the browser):
 | `OPENCODE_AGENT` | `music-classifier` | Agent name (CLI mode) |
 | `OPENCODE_API_URL` / `OPENCODE_API_KEY` | Go endpoint / - | Direct OpenCode API (`api` mode) |
 | `OPENCODE_MEDIA_MODELS` | auto | Explicit allowlist of selectable media models |
-| `OPENCODE_MAX_AUDIO_BYTES` / `..._OUTPUT_TOKENS` | `12 MB` / `3000` | Inline audio and output caps |
+| `OPENCODE_MAX_AUDIO_BYTES` / `..._SECONDS` / `..._OUTPUT_TOKENS` | `12 MB` / `120 s` / `3000` | Inline audio caps; only the first N seconds are analysed (0 disables) |
 | `OPENCODE_MODEL_CATALOG_URL` / `..._TTL_MS` | models.dev / 6 h | Capability catalogue |
 | `OPENCODE_ENDPOINT` / `OPENCODE_GATEWAY_TOKEN` | - | Remote gateway for `http` mode (always set a token) |
 | `GATEWAY_PORT` | `8788` | Port for `npm run start:gateway` |

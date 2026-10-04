@@ -55,6 +55,7 @@ const RawConfigSchema = z.object({
     .int()
     .positive()
     .default(12 * 1024 * 1024),
+  opencodeMaxAudioSeconds: z.coerce.number().int().nonnegative().default(120),
   opencodeMaxOutputTokens: z.coerce.number().int().positive().default(3_000),
   opencodeCatalogUrl: z.string().default('https://models.dev/api.json'),
   opencodeCatalogTtlMs: z.coerce
@@ -93,6 +94,7 @@ export interface OpenCodeConfig {
   readonly apiKey?: string
   readonly mediaModels: readonly string[]
   readonly maxAudioBytes: number
+  readonly maxAudioSeconds: number
   readonly maxOutputTokens: number
   readonly catalogUrl: string
   readonly catalogTtlMs: number
@@ -209,6 +211,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     opencodeApiKey: env.OPENCODE_API_KEY,
     opencodeMediaModels: splitList(env.OPENCODE_MEDIA_MODELS),
     opencodeMaxAudioBytes: env.OPENCODE_MAX_AUDIO_BYTES,
+    opencodeMaxAudioSeconds: env.OPENCODE_MAX_AUDIO_SECONDS,
     opencodeMaxOutputTokens: env.OPENCODE_MAX_OUTPUT_TOKENS,
     opencodeCatalogUrl: env.OPENCODE_MODEL_CATALOG_URL,
     opencodeCatalogTtlMs: env.OPENCODE_MODEL_CATALOG_TTL_MS,
@@ -273,6 +276,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       apiKey: raw.opencodeApiKey,
       mediaModels: raw.opencodeMediaModels,
       maxAudioBytes: raw.opencodeMaxAudioBytes,
+      maxAudioSeconds: raw.opencodeMaxAudioSeconds,
       maxOutputTokens: raw.opencodeMaxOutputTokens,
       catalogUrl: raw.opencodeCatalogUrl,
       catalogTtlMs: raw.opencodeCatalogTtlMs,

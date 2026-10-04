@@ -152,6 +152,11 @@ export class MusicSubmissionWorkflow {
         'The GitHub writer is not configured, so the database cannot be updated in this environment',
       )
     }
+    if (this.config.github.mode === 'local-git' && this.config.github.writeMode !== 'direct') {
+      throw ApiError.misconfigured(
+        'local-git mode can only commit directly; set GITHUB_WRITE_MODE=direct',
+      )
+    }
 
     const result =
       this.config.github.writeMode === 'direct'

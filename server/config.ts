@@ -82,7 +82,7 @@ const RawConfigSchema = z.object({
   musicBrainzUserAgent: z
     .string()
     .default('AI-Music-Style-Database/1.0 (+https://github.com/OWNER/REPOSITORY)'),
-  githubMode: z.enum(['app', 'dry-run']).default('app'),
+  githubMode: z.enum(['app', 'dry-run', 'local-git']).default('app'),
   githubWriteMode: z.enum(['pr', 'direct']).default('pr'),
   githubOwner: z.string().optional(),
   githubRepository: z.string().optional(),
@@ -90,6 +90,10 @@ const RawConfigSchema = z.object({
   githubAppId: z.coerce.number().int().positive().optional(),
   githubAppPrivateKey: z.string().optional(),
   githubApiUrl: z.string().default('https://api.github.com'),
+  githubRemoteUrl: z.string().optional(),
+  githubLocalRepoDir: z.string().optional(),
+  githubCommitName: z.string().min(1).default('AI Music Style Database'),
+  githubCommitEmail: z.string().min(1).default('ai-music-style-database@users.noreply.github.com'),
 })
 
 export interface OpenCodeConfig {
@@ -112,7 +116,13 @@ export interface OpenCodeConfig {
 }
 
 export interface GitHubConfig {
-  readonly mode: 'app' | 'dry-run'
+  /**
+   * app      - GitHub App installation tokens (production)
+   * dry-run  - in-memory simulation, never contacts GitHub
+   * local-git- commit and push using the local git/SSH credentials (direct
+   *            commits only; no Pull Requests)
+   */
+  readonly mode: 'app' | 'dry-run' | 'local-git'
   /**
    * `pr`     - commit to a submissions branch and open a public Pull Request
    * `direct` - commit the change straight to the base branch, no Pull Request
@@ -124,6 +134,10 @@ export interface GitHubConfig {
   readonly appId?: number
   readonly privateKey?: string
   readonly apiUrl: string
+  readonly remoteUrl?: string
+  readonly localRepoDir?: string
+  readonly commitName: string
+  readonly commitEmail: string
 }
 
 export interface MusicMapConfig {
@@ -254,6 +268,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     githubAppId: env.GITHUB_APP_ID,
     githubAppPrivateKey: env.GITHUB_APP_PRIVATE_KEY,
     githubApiUrl: env.GITHUB_API_URL,
+    githubRemoteUrl: env.GITHUB_REMOTE_URL,
+    githubLocalRepoDir: env.GITHUB_LOCAL_REPO_DIR,
+    githubCommitName: env.GITHUB_COMMIT_NAME,
+    githubCommitEmail: env.GITHUB_COMMIT_EMAIL,
   })
 
   if (!parsed.success) {
@@ -333,12 +351,16 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       appId: raw.githubAppId,
       privateKey: normalizePrivateKey(raw.githubAppPrivateKey),
       apiUrl: raw.githubApiUrl,
+      remoteUrl: raw.githubRemoteUrl,
+      localRepoDir: raw.githubLocalRepoDir,
+      commitName: raw.githubCommitName,
+      commitEmail: raw.githubCommitEmail,
     },
   }
 }
 
 export function isGitHubWriterConfigured(config: AppConfig): boolean {
-  if (config.github.mode === 'dry-run') return true
+  if (config.github.mode === 'dry-run' || config.github.mode === 'local-git') return true
   return Boolean(
     config.github.owner &&
     config.github.repository &&

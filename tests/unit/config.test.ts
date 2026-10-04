@@ -66,9 +66,9 @@ describe('isGitHubWriterConfigured', () => {
     expect(isGitHubWriterConfigured(testConfig())).toBe(true)
   })
 
-  it('is always true in dry-run mode', () => {
-    const config = testConfig({ GITHUB_MODE: 'dry-run' })
-    expect(isGitHubWriterConfigured(config)).toBe(true)
+  it('is true in dry-run and local-git modes', () => {
+    expect(isGitHubWriterConfigured(testConfig({ GITHUB_MODE: 'dry-run' }))).toBe(true)
+    expect(isGitHubWriterConfigured(testConfig({ GITHUB_MODE: 'local-git' }))).toBe(true)
   })
 })
 

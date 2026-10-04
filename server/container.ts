@@ -5,6 +5,7 @@ import { Semaphore } from './concurrency.js'
 import { createApp, type App } from './app.js'
 import { GitHubAppClient } from './services/github/githubApp.js'
 import { DryRunGitHubClient } from './services/github/dryRun.js'
+import { LocalGitHubClient } from './services/github/localGit.js'
 import type { GitHubRepositoryClient } from './services/github/types.js'
 import { createMusicAnalysisAgent } from './services/opencode/agent.js'
 import { OpenCodeModelCatalog, StaticModelCatalog } from './services/opencode/modelCatalog.js'
@@ -41,6 +42,25 @@ export function createRuntime(options: CreateRuntimeOptions = {}): Runtime {
       ...(config.github.owner && config.github.repository
         ? { repositoryLabel: `${config.github.owner}/${config.github.repository}` }
         : {}),
+      logger,
+    })
+  } else if (config.github.mode === 'local-git') {
+    const remoteUrl =
+      config.github.remoteUrl ??
+      (config.github.owner && config.github.repository
+        ? `git@github.com:${config.github.owner}/${config.github.repository}.git`
+        : undefined)
+    if (!remoteUrl) {
+      throw new Error(
+        'local-git mode requires GITHUB_REMOTE_URL or GITHUB_OWNER + GITHUB_REPOSITORY',
+      )
+    }
+    github = new LocalGitHubClient({
+      remoteUrl,
+      branch: config.github.baseBranch,
+      ...(config.github.localRepoDir ? { repoDir: config.github.localRepoDir } : {}),
+      commitName: config.github.commitName,
+      commitEmail: config.github.commitEmail,
       logger,
     })
   } else if (isGitHubWriterConfigured(config)) {

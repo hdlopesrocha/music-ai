@@ -641,7 +641,8 @@ Server variables (never exposed to the browser):
 | `SONG_MATCH_MIN_SCORE` | `75` | MusicBrainz score threshold |
 | `MUSICBRAINZ_USER_AGENT` | project UA | Required by MusicBrainz |
 | `FEEDBACK_TOKEN_SECRET` | `RATE_LIMIT_SALT` | HMAC secret for feedback tokens |
-| `GITHUB_MODE` | `app` | `app` \| `dry-run` |
+| `GITHUB_MODE` | `app` | `app` \| `dry-run` \| `local-git` |
+| `GITHUB_REMOTE_URL` / `GITHUB_LOCAL_REPO_DIR` | derived / `~/.cache/music-ai/repo` | local-git clone target |
 | `GITHUB_WRITE_MODE` | `pr` | `pr` opens a Pull Request; `direct` commits to the base branch |
 | `GITHUB_OWNER` / `GITHUB_REPOSITORY` / `GITHUB_BASE_BRANCH` | - | Target repository |
 | `GITHUB_APP_ID` / `GITHUB_APP_PRIVATE_KEY` | - | GitHub App credentials |
@@ -728,10 +729,20 @@ the gateway (`npm run start:gateway`) running on a Node host.
 | `pr` (default) | Commits to a `submissions/<style>-<id>` branch and opens a public Pull Request. Reviewable, and the feedback comment flow works. |
 | `direct` | Commits straight to `GITHUB_BASE_BRANCH` (e.g. `main`/`master`) with the same optimistic-concurrency retries and schema validation. No branch, no review, no feedback comments. |
 
-Both modes use the GitHub App and the same duplicate/style/schema validation; the only
-difference is where the commit lands. Direct mode is intended for single-maintainer setups
-or fully trusted deployments. If the target branch is protected, the GitHub App must be
-allowed to bypass the protection or the commit will be rejected with `GITHUB_FAILED`.
+Both modes use the same duplicate/style/schema validation; the only difference is where the
+commit lands. Direct mode is intended for single-maintainer setups or fully trusted
+deployments. If the target branch is protected, the writer must be allowed to bypass the
+protection or the commit will be rejected with `GITHUB_FAILED`.
+
+Writers (`GITHUB_MODE`):
+
+- `app` - GitHub App installation tokens. The production choice, and the only one that can
+  also open Pull Requests.
+- `dry-run` - in-memory simulation for local development.
+- `local-git` - runs `git fetch`/`commit`/`push` against `GITHUB_REMOTE_URL` in a dedicated
+  clone (`~/.cache/music-ai/repo`), using the machine's existing git credentials. Direct
+  commits only; it never touches your working tree and re-fetches before every commit with
+  the same optimistic-concurrency retries.
 
 In direct mode the API responds with `publication.type: "commit"` and a `commit` object
 (`{ sha, url, branch }`) instead of `pullRequest`; the UI shows a "Committed directly" card

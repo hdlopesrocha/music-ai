@@ -37,35 +37,161 @@
     {
       "id": "50a1435eb6c635ed99831b2a324fbc7fea7554dd8e2c84d74f6a5c011eabda66",
       "fileName": "José González - Heartbeats (Lyric Video) [ik_BQYbbZ5U].mp3",
-      "duration": 161,
       "style": "Folk",
+      "confidence": 0.93,
+      "detectedAt": "2026-10-04T18:08:08.578Z",
+      "source": "opencode",
+      "title": "Heartbeats",
+      "artist": "José González",
+      "duration": 161,
       "substyles": [
         "Acoustic Folk",
-        "Indie Folk"
+        "Indie Folk",
+        "Singer-Songwriter"
       ],
       "tags": [
         "acoustic guitar",
         "fingerpicking",
         "intimate vocals",
         "male vocalist",
-        "melancholic",
         "minimal arrangement",
-        "singer-songwriter",
-        "warm production"
+        "melancholic",
+        "warm production",
+        "soft dynamics"
       ],
-      "confidence": 0.92,
       "hasLyrics": true,
       "lyricsLanguage": "English",
-      "detectedAt": "2026-10-04T16:43:42.764Z",
-      "source": "opencode",
+      "subtitles": [
+        {
+          "start": 27.4,
+          "end": 31.2,
+          "text": "One night to be confused"
+        },
+        {
+          "start": 31.4,
+          "end": 35.2,
+          "text": "One night to speed up truth"
+        },
+        {
+          "start": 35.4,
+          "end": 39.2,
+          "text": "We had a promise made"
+        },
+        {
+          "start": 39.4,
+          "end": 43.2,
+          "text": "Four hands and then away"
+        },
+        {
+          "start": 43.4,
+          "end": 47.2,
+          "text": "Both under influence"
+        },
+        {
+          "start": 47.4,
+          "end": 51,
+          "text": "We had divine sense"
+        },
+        {
+          "start": 51.2,
+          "end": 54.8,
+          "text": "To know what to say"
+        },
+        {
+          "start": 55,
+          "end": 59,
+          "text": "Mind is a razor blade"
+        },
+        {
+          "start": 60.4,
+          "end": 65.4,
+          "text": "To call for hands of above to lean on"
+        },
+        {
+          "start": 65.6,
+          "end": 71,
+          "text": "Wouldn't be good enough for me, no"
+        },
+        {
+          "start": 78.4,
+          "end": 82.4,
+          "text": "One night of magic rush"
+        },
+        {
+          "start": 82.6,
+          "end": 86.6,
+          "text": "The start a simple touch"
+        },
+        {
+          "start": 86.8,
+          "end": 90.8,
+          "text": "One night to push and scream"
+        },
+        {
+          "start": 91,
+          "end": 95,
+          "text": "And then relief"
+        },
+        {
+          "start": 95.2,
+          "end": 99.2,
+          "text": "Ten days of perfect tunes"
+        },
+        {
+          "start": 99.4,
+          "end": 103.4,
+          "text": "The colors red and blue"
+        },
+        {
+          "start": 103.6,
+          "end": 107.6,
+          "text": "We had a promise made"
+        },
+        {
+          "start": 107.8,
+          "end": 111.8,
+          "text": "We were in love"
+        },
+        {
+          "start": 113.4,
+          "end": 118.4,
+          "text": "To call for hands of above to lean on"
+        },
+        {
+          "start": 118.6,
+          "end": 123.6,
+          "text": "Wouldn't be good enough for me, no"
+        },
+        {
+          "start": 124.4,
+          "end": 129.4,
+          "text": "To call for hands of above to lean on"
+        },
+        {
+          "start": 129.6,
+          "end": 133.6,
+          "text": "Wouldn't be good enough for you"
+        },
+        {
+          "start": 140.4,
+          "end": 145.4,
+          "text": "You knew the hand of the devil"
+        },
+        {
+          "start": 149.4,
+          "end": 151.4,
+          "text": "And you"
+        }
+      ],
       "diagnostics": {
-        "bpm": 82,
+        "bpm": 87,
         "duration": 161,
         "key": "Eb major",
-        "energy": 0.35,
+        "energy": 0.28,
         "instrumentation": [
           "acoustic guitar",
-          "male vocals"
+          "fingerpicked arpeggios",
+          "male lead vocals"
         ]
       }
     },
@@ -119,14 +245,11 @@
     {
       "id": "ea35c904afb216f3afd765c01978758b2294188c2cd43b6c415b71e4ac8887f9",
       "fileName": "if-i-loved-you-1945.mp3",
-      "style": "Jazz",
-      "confidence": 0.95,
-      "detectedAt": "2026-10-04T18:00:23.634Z",
-      "source": "opencode",
       "title": "If I Loved You",
       "artist": "Larry Clinton's Orchestra;The Toon Timers;Hammerstein II and Richard Rodgers",
       "album": "If I Loved You",
       "duration": 197,
+      "style": "Jazz",
       "substyles": [
         "Big Band",
         "Traditional Pop",
@@ -146,6 +269,7 @@
         "ballad tempo",
         "show tune"
       ],
+      "confidence": 0.95,
       "hasLyrics": true,
       "lyricsLanguage": "English",
       "subtitles": [
@@ -170,6 +294,8 @@
           "text": "If I loved you"
         }
       ],
+      "detectedAt": "2026-10-04T18:00:23.634Z",
+      "source": "opencode",
       "diagnostics": {
         "bpm": 72,
         "duration": 197,

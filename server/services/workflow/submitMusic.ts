@@ -272,6 +272,9 @@ export class MusicSubmissionWorkflow {
       style: validation.resolvedStyle,
       song,
       now: this.now(),
+      ...(this.config.storeSubtitles && result.lyricsSegments
+        ? { subtitles: result.lyricsSegments }
+        : {}),
     })
 
     return { status: 'classified', track, classification: result, song }

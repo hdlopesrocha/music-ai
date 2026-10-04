@@ -30,6 +30,7 @@ export interface Track {
   confidence: number
   hasLyrics?: boolean
   lyricsLanguage?: string
+  subtitles?: LyricSegment[]
   song?: VerifiedSong
   detectedAt: string
   source: 'opencode'

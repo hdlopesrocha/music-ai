@@ -80,6 +80,7 @@ if (musicDoc !== null) {
         'confidence',
         'hasLyrics',
         'lyricsLanguage',
+        'subtitles',
         'song',
         'detectedAt',
         'source',
@@ -104,6 +105,25 @@ if (musicDoc !== null) {
           fail(`${where}: style "${track.style}" is not present in data/styles.json`)
         if (typeof track.confidence !== 'number' || track.confidence < 0 || track.confidence > 1)
           fail(`${where}: "confidence" must be a number between 0 and 1`)
+        if (track.subtitles !== undefined) {
+          if (!Array.isArray(track.subtitles)) {
+            fail(`${where}: "subtitles" must be an array`)
+          } else {
+            for (const [segmentIndex, segment] of track.subtitles.entries()) {
+              const segWhere = `${where}.subtitles[${segmentIndex}]`
+              if (!isPlainObject(segment)) {
+                fail(`${segWhere} must be an object`)
+                continue
+              }
+              if (typeof segment.start !== 'number' || segment.start < 0)
+                fail(`${segWhere}: "start" must be a non-negative number`)
+              if (typeof segment.end !== 'number' || segment.end < 0)
+                fail(`${segWhere}: "end" must be a non-negative number`)
+              if (!isNonEmptyString(segment.text))
+                fail(`${segWhere}: "text" must be a non-empty string`)
+            }
+          }
+        }
         if (!isNonEmptyString(track.detectedAt) || Number.isNaN(Date.parse(track.detectedAt)))
           fail(`${where}: "detectedAt" must be an ISO date string`)
         if (track.source !== 'opencode') fail(`${where}: "source" must be "opencode"`)

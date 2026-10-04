@@ -1,6 +1,10 @@
 import { z } from 'zod'
 import type { AudioMetadata } from './audio.js'
-import type { MusicAnalysisDiagnostics, MusicAnalysisResult } from '../opencode/types.js'
+import type {
+  LyricSegment,
+  MusicAnalysisDiagnostics,
+  MusicAnalysisResult,
+} from '../opencode/types.js'
 import type { VerifiedSongMatch } from '../song/types.js'
 import { optionalTrimmed } from '../../utils/text.js'
 
@@ -11,6 +15,14 @@ export const DiagnosticsSchema = z
     key: z.string().max(40).optional(),
     energy: z.number().min(0).max(1).optional(),
     instrumentation: z.array(z.string().max(80)).max(30).optional(),
+  })
+  .strict()
+
+export const SubtitleSegmentSchema = z
+  .object({
+    start: z.number().min(0).max(86_400),
+    end: z.number().min(0).max(86_400),
+    text: z.string().min(1).max(500),
   })
   .strict()
 
@@ -41,6 +53,8 @@ export const TrackSchema = z
     confidence: z.number().min(0).max(1),
     hasLyrics: z.boolean().optional(),
     lyricsLanguage: z.string().max(40).optional(),
+    /** Timed lyric lines. Only stored when STORE_SUBTITLES=true. */
+    subtitles: z.array(SubtitleSegmentSchema).max(500).optional(),
     song: SongSchema.optional(),
     detectedAt: z
       .string()
@@ -188,6 +202,8 @@ export interface BuildTrackRecordParams {
   readonly style: string
   readonly song: VerifiedSongMatch | null
   readonly now: Date
+  /** When provided, timed lyric lines are persisted for SRT export. */
+  readonly subtitles?: readonly LyricSegment[]
 }
 
 export function buildTrackRecord(params: BuildTrackRecordParams): Track {
@@ -231,6 +247,17 @@ export function buildTrackRecord(params: BuildTrackRecordParams): Track {
   record.hasLyrics = hasLyrics
   const language = hasLyrics ? optionalTrimmed(classification.lyricsLanguage, 40) : undefined
   if (language) record.lyricsLanguage = language
+
+  if (params.subtitles && params.subtitles.length > 0) {
+    record.subtitles = params.subtitles
+      .filter((segment) => segment.text.trim().length > 0)
+      .map((segment) => ({
+        start: Math.max(0, segment.start),
+        end: segment.end > segment.start ? segment.end : segment.start + 2,
+        text: segment.text.trim(),
+      }))
+      .slice(0, 500)
+  }
 
   if (song) {
     record.song = {

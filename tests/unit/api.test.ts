@@ -546,6 +546,29 @@ describe('similar artists', () => {
 })
 
 describe('direct write mode', () => {
+  it('persists subtitles in the committed database when enabled', async () => {
+    const agent = new FakeMusicAnalysisAgent({
+      lyrics: 'First line\nSecond line',
+      lyricsSegments: [
+        { start: 0, end: 3, text: 'First line' },
+        { start: 4, end: 7, text: 'Second line' },
+      ],
+      instrumental: false,
+    })
+    const { app, github, config } = createHarness({
+      agent,
+      env: { GITHUB_WRITE_MODE: 'direct', STORE_SUBTITLES: 'true' },
+    })
+    const response = await app.handle(submissionRequest())
+    expect(response.status).toBe(201)
+
+    const database = parseMusicDatabase(github.baseFiles.get(config.musicDatabasePath) ?? '')
+    expect(database.tracks[0]?.subtitles).toEqual([
+      { start: 0, end: 3, text: 'First line' },
+      { start: 4, end: 7, text: 'Second line' },
+    ])
+  })
+
   it('commits to the base branch instead of opening a Pull Request', async () => {
     const { app, github, config } = createHarness({ env: { GITHUB_WRITE_MODE: 'direct' } })
     const response = await app.handle(submissionRequest())

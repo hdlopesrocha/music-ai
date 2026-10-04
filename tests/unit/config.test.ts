@@ -19,6 +19,11 @@ describe('loadConfig', () => {
     expect(config.allowedOrigins).toEqual([])
   })
 
+  it('keeps subtitle storage off by default and parses the flag', () => {
+    expect(testConfig().storeSubtitles).toBe(false)
+    expect(testConfig({ STORE_SUBTITLES: 'true' }).storeSubtitles).toBe(true)
+  })
+
   it('parses numeric limits', () => {
     const config = testConfig({ MIN_STYLE_CONFIDENCE: '0.85', MAX_UPLOAD_SIZE: '1024' })
     expect(config.minStyleConfidence).toBe(0.85)

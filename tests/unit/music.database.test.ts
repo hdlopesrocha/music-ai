@@ -176,6 +176,34 @@ describe('buildTrackRecord', () => {
     expect(track.lyricsLanguage).toBeUndefined()
   })
 
+  it('persists timed subtitles when provided', () => {
+    const track = buildTrackRecord({
+      metadata,
+      classification: {
+        style: 'Pop',
+        confidence: 0.9,
+        lyrics: 'First line\nSecond line',
+        instrumental: false,
+      },
+      style: 'Pop',
+      song: null,
+      now: new Date('2026-10-04T12:00:00.000Z'),
+      subtitles: [
+        { start: 4, end: 3, text: ' Second line ' },
+        { start: 0, end: 3, text: 'First line' },
+      ],
+    })
+
+    expect(track.subtitles).toEqual([
+      { start: 4, end: 6, text: 'Second line' },
+      { start: 0, end: 3, text: 'First line' },
+    ])
+    expect(
+      parseMusicDatabase(serializeMusicDatabase({ version: 1, tracks: [track] })).tracks[0]
+        ?.subtitles,
+    ).toHaveLength(2)
+  })
+
   it('falls back to the AI song proposal for title and artist', () => {
     const track = buildTrackRecord({
       metadata: { ...metadata, title: undefined, artist: undefined },

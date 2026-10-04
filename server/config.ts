@@ -65,6 +65,7 @@ const RawConfigSchema = z.object({
     .default(6 * 60 * 60 * 1000),
   opencodeTimeoutMs: z.coerce.number().int().positive().default(120_000),
   opencodeEnvPassthrough: z.array(z.string()).default([]),
+  storeSubtitles: BooleanFromEnv.default(false),
   musicMapEnabled: BooleanFromEnv.default(true),
   musicMapBaseUrl: z.string().default('https://www.music-map.com'),
   musicMapTimeoutMs: z.coerce.number().int().positive().default(8_000),
@@ -177,6 +178,12 @@ export interface AppConfig {
   readonly styleDatabasePath: string
   readonly serveStatic: boolean
   readonly staticDir: string
+  /**
+   * Persist timed lyric segments in music.json so the Database view can offer
+   * SRT downloads. Off by default: storing full lyrics of third-party music in
+   * a public repository may infringe copyright.
+   */
+  readonly storeSubtitles: boolean
   readonly opencode: OpenCodeConfig
   readonly musicMap: MusicMapConfig
   readonly songLookup: SongLookupConfig
@@ -233,6 +240,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     styleDatabasePath: env.STYLE_DATABASE_PATH,
     serveStatic: env.SERVE_STATIC,
     staticDir: env.STATIC_DIR,
+    storeSubtitles: env.STORE_SUBTITLES,
     opencodeMode: env.OPENCODE_MODE,
     opencodeBin: env.OPENCODE_BIN,
     opencodeModel: env.OPENCODE_MODEL,
@@ -304,6 +312,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     styleDatabasePath: raw.styleDatabasePath,
     serveStatic: raw.serveStatic,
     staticDir: raw.staticDir,
+    storeSubtitles: raw.storeSubtitles,
     opencode: {
       mode: raw.opencodeMode,
       bin: raw.opencodeBin,
@@ -373,6 +382,7 @@ export function describeConfig(config: AppConfig): Record<string, unknown> {
   return {
     nodeEnv: config.nodeEnv,
     serveStatic: config.serveStatic,
+    storeSubtitles: config.storeSubtitles,
     opencodeMode: config.opencode.mode,
     opencodeModel: config.opencode.model,
     minStyleConfidence: config.minStyleConfidence,

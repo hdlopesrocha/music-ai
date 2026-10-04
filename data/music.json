@@ -198,10 +198,13 @@
     {
       "id": "496710d70380c36c1f08ba6258b660b748acda68178f2d934f4844b6d48b24bf",
       "fileName": "Moblack, Salif Keita & Cesária Evora - Yamore (Lyrics) [qZNYIaMGpF0].mp3",
+      "style": "House",
+      "confidence": 0.95,
+      "detectedAt": "2026-10-04T18:19:48.941Z",
+      "source": "opencode",
       "title": "Yamore",
       "artist": "MobiBlack, Salif Keita & Cesária Evora",
       "duration": 248,
-      "style": "House",
       "substyles": [
         "Deep House",
         "Afro House",
@@ -219,40 +222,151 @@
         "soulful",
         "danceable"
       ],
-      "confidence": 0.88,
       "hasLyrics": true,
-      "lyricsLanguage": "French, Portuguese, Cape Verdean Creole",
-      "detectedAt": "2026-10-04T17:23:52.832Z",
-      "source": "opencode",
+      "lyricsLanguage": "French",
+      "lyrics": "Ndjoué itou kassé\nN'tan pass\n\nM'ont dit fe\nSimou n'té fe\nNa n'bé namoï sé mi n'bi kou fi é\nN'wé ra majin\n\nNa ma fe\nNa ma fe nié nianalamo\nNa ma fe\nNé a ra nanou fo\nYi na nouan ko fi é\nNé o si la é kon ti lélé é dou con la\nHahaha\nTi lélé nianalamo\nYi na nouan ko fi é\n\nChéri n'djé bi fe é, n'paw\nJe t'aime mi amor mais n'djé bi fe é\nN'gou ma ti\n\nJe t'aime mi amor mais n'djé bi fe é\nN'gou ma ti\n\nN'gou ma ti\nN'gou ma ti\nN'gou ma ti",
+      "subtitles": [
+        {
+          "start": 0,
+          "end": 3.5,
+          "text": "Ndjoué itou kassé"
+        },
+        {
+          "start": 3.5,
+          "end": 6,
+          "text": "N'tan pass"
+        },
+        {
+          "start": 31,
+          "end": 34.5,
+          "text": "M'ont dit fe"
+        },
+        {
+          "start": 34.5,
+          "end": 38,
+          "text": "Simou n'té fe"
+        },
+        {
+          "start": 38,
+          "end": 43,
+          "text": "Na n'bé namoï sé mi n'bi kou fi é"
+        },
+        {
+          "start": 43,
+          "end": 47,
+          "text": "N'wé ra majin"
+        },
+        {
+          "start": 62,
+          "end": 65,
+          "text": "Na ma fe"
+        },
+        {
+          "start": 65.5,
+          "end": 69,
+          "text": "Na ma fe nié nianalamo"
+        },
+        {
+          "start": 69.5,
+          "end": 72,
+          "text": "Na ma fe"
+        },
+        {
+          "start": 72,
+          "end": 75.5,
+          "text": "Né a ra nanou fo"
+        },
+        {
+          "start": 75.5,
+          "end": 79.5,
+          "text": "Yi na nouan ko fi é"
+        },
+        {
+          "start": 79.5,
+          "end": 85.5,
+          "text": "Né o si la é kon ti lélé é dou con la"
+        },
+        {
+          "start": 85.5,
+          "end": 88,
+          "text": "Hahaha"
+        },
+        {
+          "start": 88,
+          "end": 91.5,
+          "text": "Ti lélé nianalamo"
+        },
+        {
+          "start": 91.5,
+          "end": 95.5,
+          "text": "Yi na nouan ko fi é"
+        },
+        {
+          "start": 132,
+          "end": 136.5,
+          "text": "Chéri n'djé bi fe é, n'paw"
+        },
+        {
+          "start": 136.5,
+          "end": 144,
+          "text": "Je t'aime mi amor mais n'djé bi fe é"
+        },
+        {
+          "start": 144,
+          "end": 150.5,
+          "text": "N'gou ma ti"
+        },
+        {
+          "start": 150.5,
+          "end": 158.5,
+          "text": "Je t'aime mi amor mais n'djé bi fe é"
+        },
+        {
+          "start": 158.5,
+          "end": 165,
+          "text": "N'gou ma ti"
+        },
+        {
+          "start": 165,
+          "end": 171.5,
+          "text": "N'gou ma ti"
+        },
+        {
+          "start": 171.5,
+          "end": 178,
+          "text": "N'gou ma ti"
+        },
+        {
+          "start": 178,
+          "end": 184.5,
+          "text": "N'gou ma ti"
+        }
+      ],
       "diagnostics": {
         "bpm": 122,
         "duration": 248,
-        "key": "B minor",
-        "energy": 0.62,
+        "key": "A minor",
+        "energy": 0.72,
         "instrumentation": [
-          "kick drum",
+          "drum machine",
           "shaker",
           "congas",
-          "hand percussion",
-          "synth bass",
-          "warm synth pads",
-          "clean electric guitar",
-          "male lead vocals",
-          "female backing vocals"
+          "warm synth bass",
+          "organ pads",
+          "male vocals",
+          "female vocals",
+          "vocal chants"
         ]
       }
     },
     {
       "id": "ea35c904afb216f3afd765c01978758b2294188c2cd43b6c415b71e4ac8887f9",
       "fileName": "if-i-loved-you-1945.mp3",
-      "style": "Jazz",
-      "confidence": 0.9,
-      "detectedAt": "2026-10-04T18:15:12.106Z",
-      "source": "opencode",
       "title": "If I Loved You",
       "artist": "Larry Clinton's Orchestra;The Toon Timers;Hammerstein II and Richard Rodgers",
       "album": "If I Loved You",
       "duration": 197,
+      "style": "Jazz",
       "substyles": [
         "Big Band",
         "Swing",
@@ -272,6 +386,7 @@
         "ballad tempo",
         "show tune"
       ],
+      "confidence": 0.9,
       "hasLyrics": true,
       "lyricsLanguage": "English",
       "lyrics": "Oh, I'd love you\ntime and again I would try to say\nall I want you to know\nIf I loved you",
@@ -297,6 +412,8 @@
           "text": "If I loved you"
         }
       ],
+      "detectedAt": "2026-10-04T18:15:12.106Z",
+      "source": "opencode",
       "diagnostics": {
         "bpm": 72,
         "duration": 197,
